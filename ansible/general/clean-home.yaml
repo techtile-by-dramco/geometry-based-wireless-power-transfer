@@ -1,4 +1,5 @@
 # Part of the redesigned client management system
+# Cleans the client home directory
 ---
 - name: Clean home directory safely
   hosts: all

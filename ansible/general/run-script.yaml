@@ -1,27 +1,61 @@
 # Part of the redesigned client management system
-# Run a script on the client
+# Run a script on the client and register the output
+# ansible-playbook -i hosts.yaml run_status.yml --extra-vars "script_path=/tmp/my_script.sh" [--limit a-single host]
 ---
-- name: Run status script and check result
+- name: Run status script asynchronously and check result
   hosts: all
   become: no
   vars:
-    # Default script path
     default_script_path: "/home/pi/check_status.sh"
-    # Use provided 'script_path' extra var if set, otherwise default
-    script_path: "{{ script_path | default(default_script_path) }}"
+    script_timeout: 3600  # max runtime in seconds
 
   tasks:
-    - name: Run the script
-      ansible.builtin.command: "{{ script_path }}"
-      register: script_output
-      changed_when: false
+    - name: Set script path (use extra-var if provided, otherwise default)
+      ansible.builtin.set_fact:
+        script_path: "{{ script_path | default(default_script_path) }}"
 
-    - name: Fail if result is not OK
+    - name: Check if the script exists
+      ansible.builtin.stat:
+        path: "{{ script_path }}"
+      register: script_stat
+
+    - name: Fail if the script does not exist
       ansible.builtin.fail:
-        msg: "The script reported: {{ script_output.stdout }}"
-      when: script_output.stdout != "OK"
+        msg: "The script {{ script_path }} does not exist!"
+      when: not script_stat.stat.exists
+
+    - name: Ensure the script is executable
+      ansible.builtin.file:
+        path: "{{ script_path }}"
+        mode: "0755"
+      when: script_stat.stat.exists
+
+    - name: Run the script asynchronously
+      ansible.builtin.command: "{{ script_path }}"
+      async: "{{ script_timeout }}"
+      poll: 0
+      register: async_job
+      when: script_stat.stat.exists
+
+    - name: Wait for async job to finish
+      ansible.builtin.async_status:
+        jid: "{{ async_job.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: "{{ (script_timeout | int) // 10 }}"
+      delay: 10
+      when: script_stat.stat.exists
+
+    - name: Fail if script result is not OK
+      ansible.builtin.fail:
+        msg: "The script reported: {{ job_result.stdout }}"
+      when:
+        - script_stat.stat.exists
+        - job_result.stdout != "OK"
 
     - name: Success message if OK
       ansible.builtin.debug:
         msg: "The script returned OK"
-      when: script_output.stdout == "OK"
+      when:
+        - script_stat.stat.exists
+        - job_result.stdout == "OK"
