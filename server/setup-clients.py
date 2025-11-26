@@ -71,4 +71,6 @@ except RuntimeError as e:
 except Exception as e:
     print(f"Unexpected error: {e}")
 finally:
+    # cleanup directories created by ansible-runner
     shutil.rmtree(os.path.join(project_dir, "artifacts"), ignore_errors=True)
+    shutil.rmtree(os.path.join(project_dir, "env"), ignore_errors=True)
