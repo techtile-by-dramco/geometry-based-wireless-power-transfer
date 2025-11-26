@@ -1,7 +1,0 @@
----
-- name: Gathering Facts with Retries
-  setup:  
-  register: gather_result
-  until: gather_result is succeeded
-  retries: 15
-  delay: 10 

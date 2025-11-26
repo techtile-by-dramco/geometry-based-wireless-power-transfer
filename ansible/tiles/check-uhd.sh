@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script verifies the UHD install and performs some extra setup tasks when needed.
+# As a final test, it verifies if the UHD can be accessed through the python API
+
 # We start by downloading the images
 # Check if uhd_images_downloader is available
 if ! command -v uhd_images_downloader >/dev/null 2>&1; then
@@ -85,12 +88,14 @@ append_if_missing_prefix() {
 }
 
 # Check each line
-#append_if_missing_prefix "$ROOT_BASHRC" "$HEADER" "\n\n"
-append_if_missing_prefix "$PI_BASHRC" "$HEADER" "\n\n"
+#append_if_missing_prefix "$ROOT_BASHRC" "$HEADER" "\n"
+append_if_missing_prefix "$PI_BASHRC" "$HEADER" "\n"
 #append_if_missing_prefix "$ROOT_BASHRC" "$LINE1" ""
 append_if_missing_prefix "$PI_BASHRC" "$LINE1" ""
 #append_if_missing_prefix "$ROOT_BASHRC" "$LINE2" ""
 #append_if_missing_prefix "$PI_BASHRC" "$LINE2" ""
+
+MIN_UHD_VERSION="(4, 7)"
 
 python3 - <<'EOF'
 import os, sys
@@ -101,6 +106,13 @@ try:
     print("✅ MultiUSRP() created successfully!")
 except Exception as e:
     print("❌ Failed:", e)
+    sys.exit(1)
+version = uhd.__version
+version_tuple = tuple(int(x) for x in version_str.split('.'))
+if version_tuple >= $MIN_UHD_VERSION:
+    print(f"UHD version {version_str} is >= 4.7 ✅")
+else:
+    print(f"UHD version {version_str} is < 4.7 ❌")
     sys.exit(1)
 EOF
 

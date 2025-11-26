@@ -1,9 +1,18 @@
 # A "new" experiment control system
 In the new system, ansible is used to manage the fleet of raspberry pi's that are part of the experiment setup.
 
-For example
+* **server** contains all ansible playbooks that can be run from your central management machine
+* **inventory** contains the ansible hosts inventory (and groups)
+* **tiles** contains scripts that are executed on the ansible hosts (i.e. the raspberry pi's) by means of the ansible playbook ```run-script.yaml```.
+
+General usage example:
 ```bash
- ansible-playbook -i ansible/inventory/hosts.yaml ansible/general/<playbook>.yaml [--limit <host>] [--extra-vars "var1=value1 var2=value2 ..."]
+ ansible-playbook -i ansible/inventory/hosts.yaml ansible/server/<playbook>.yaml [--limit <host>] [--extra-vars "var1=value1 var2=value2 ..."]
+```
+
+Run ```check-uhd.sh``` on tile A05:
+```bash
+ansible-playbook -i ansible/inventory/hosts.yaml ansible/general/run-script.yaml --extra-vars="script_path=/home/pi/geometry-based-wireless-power-transfer/ansible/tiles/install_uhd/check-uhd.sh sudo=yes sudo_flags=-E" --limit A05
 ```
 
 A typical experiment can be divided into 3 phases:
