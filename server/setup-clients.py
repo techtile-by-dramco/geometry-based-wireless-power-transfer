@@ -1,18 +1,25 @@
 import ansible_runner
+import shutil
+import os
 
-# Path to the directory containing your playbook and inventory
-base_dir_name = 'geometry-based-wireless-power-transfer'
-private_data_dir = '~/' + base_dir_name
-hosts = 'A05'
+# Some basic config
+hosts = 'A05' # hosts (clients) to set up
+repository_name = 'geometry-based-wireless-power-transfer'  # Name of the git repository
+
+# Rest of the configuration we obtain automatically
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.dirname(script_dir)
+
+print("Project dir: ", project_dir)
 
 try:
-    # Pull the repo
+    # Pull the repo on the client
     r = ansible_runner.run(
-        private_data_dir=private_data_dir,
-        playbook='ansible/server/pull-repo.yaml',
-        inventory='ansible/inventory/hosts.yaml',
+        private_data_dir=project_dir,
+        playbook=os.path.join(project_dir, 'ansible/server/pull-repo.yaml'), # paths relative to private_data_dir, didn't seem to work
+        inventory=os.path.join(project_dir, 'ansible/inventory/hosts.yaml'),
         extravars={
-            'repo_name': 'https://github.com/techtile-by-dramco/' + base_dir_name,
+            'repo_name': repository_name,
         },
         limit=hosts
     )
@@ -25,14 +32,18 @@ try:
     for event in r.events:
         if 'stdout' in event:
             print(event['stdout'])
-            
-    # Check if UHD is up-and-running
+    
+    if r.rc != 0:
+        raise RuntimeError(f"Ansible playbook failed with return code {r.rc}")
+    
+    # Now that we have the repo on the client, we can run scripts
+    # First thing we do is check if UHD is up-and-running
     r = ansible_runner.run(
-        private_data_dir=private_data_dir,
-        playbook='ansible/server/run-script.yaml',
-        inventory='ansible/inventory/hosts.yaml',
+        private_data_dir=project_dir,
+        playbook=os.path.join(project_dir, 'ansible/server/run-script.yaml'),
+        inventory=os.path.join(project_dir, 'ansible/inventory/hosts.yaml'),
         extravars={
-            'script_path': '/home/pi/' + base_dir_name + '/ansible/tiles/check-uhd.sh',
+            'script_path': os.path.join('/home/pi/', repository_name, 'ansible/tiles/check-uhd.sh'),
             'sudo': 'yes',
             'sudo_flags': '-E'
         },
@@ -48,9 +59,16 @@ try:
         if 'stdout' in event:
             print(event['stdout'])
 
+    if r.rc != 0:
+        raise RuntimeError(f"Ansible playbook failed with return code {r.rc}")
+
+    # Todo (optionally): run script (on the client) that sets up venv and downloads necessary packages through pip
+
 except FileNotFoundError as e:
     print(f"File not found: {e}")
 except RuntimeError as e:
     print(f"Runtime error: {e}")
 except Exception as e:
     print(f"Unexpected error: {e}")
+finally:
+    shutil.rmtree(os.path.join(project_dir, "artifacts"), ignore_errors=True)
