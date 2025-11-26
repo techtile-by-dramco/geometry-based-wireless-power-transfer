@@ -61,6 +61,8 @@ EOF
 fi
 
 # Add the necessary lines to .bashrc
+BASHRC="$HOME/.bashrc"
+
 # Lines to ensure exist, using the variable
 LINE1="export UHD_IMAGES_DIR=\"$images_dir\""
 LINE2='export PYTHONPATH="/usr/local/lib/python3.11/site-packages:$PYTHONPATH"'
