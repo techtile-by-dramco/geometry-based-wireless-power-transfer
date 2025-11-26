@@ -82,7 +82,29 @@ append_if_missing_prefix() {
 
 # Check each line
 append_if_missing_prefix "$LINE1"
-append_if_missing_prefix "$LINE2"
+#append_if_missing_prefix "$LINE2"
+
+python3 - <<'EOF'
+import os, sys
+try:
+    import uhd
+    print("✅ UHD module loaded from:", uhd.__file__)
+    usrp = uhd.usrp.MultiUSRP()
+    print("✅ MultiUSRP() created successfully!")
+except Exception as e:
+    print("❌ First attempt failed:", e)
+    print("🔁 Retrying with custom PYTHONPATH...")
+    os.environ["PYTHONPATH"] = "/usr/local/lib/python3.11/site-packages:" + os.environ.get("PYTHONPATH", "")
+    try:
+        import importlib; importlib.invalidate_caches()
+        import uhd
+        print("✅ UHD module reloaded from:", uhd.__file__)
+        usrp = uhd.usrp.MultiUSRP()
+        print("✅ MultiUSRP() created successfully after setting PYTHONPATH!")
+    except Exception as e2:
+        print("❌ Still failed:", e2)
+        sys.exit(1)
+EOF
 
 echo "Done checking .bashrc."
 
