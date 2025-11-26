@@ -8,6 +8,12 @@
     packages_to_install:
       - git
       - python3-venv
+      - build-essential
+      - libuhd-dev
+      - python3-uhd
+      - uhd-host
+      - cmake
+      - libboost-all-dev
 
   tasks:
     - name: Update apt cache
