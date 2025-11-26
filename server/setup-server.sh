@@ -3,8 +3,11 @@
 
 set -e
 
-# Name or path of your venv
-VENV_DIR="./server"
+# Absolute path to the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Virtual environment directory NEXT TO the script
+VENV_DIR="${SCRIPT_DIR}"
 
 # Detect if a venv is already active
 if [[ -n "$VIRTUAL_ENV" ]]; then
@@ -27,4 +30,6 @@ source "$VENV_DIR/bin/activate"
 echo "Virtual environment is now active."
 echo "Python: $(python --version)"
 echo "pip: $(pip --version)"
+
 pip install ansible-runner
+# add other python packages you might need
