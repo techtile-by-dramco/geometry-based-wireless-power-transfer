@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 import numpy as np
 import uhd
+from uhd import types
 import yaml
 import tools
 import argparse
@@ -1067,10 +1068,11 @@ def main():
             long_time=False, # Set long_time True if you want to transmit longer than 10 seconds
         )
 
-        stop_cmd = types.StreamCMD(uhd.types.StreamMode.stop_cont)
+        stop_cmd = types.StreamCMD(types.StreamMode.stop_cont)
         tx_streamer.issue_stream_cmd(stop_cmd)
+        rx_streamer.issue_stream_cmd(stop_cmd)
 
-        print("DONE - OK")
+        print("DONE")
 
     except Exception as e:
         # Handle any exception gracefully
@@ -1088,6 +1090,7 @@ def main():
             del rx_streamer
         if 'usrp' in locals():
             del usrp
+        print("OK")
         sys.exit(0)
 
 if __name__ == "__main__":
