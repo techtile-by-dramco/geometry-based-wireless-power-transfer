@@ -1067,6 +1067,9 @@ def main():
             long_time=False, # Set long_time True if you want to transmit longer than 10 seconds
         )
 
+        stop_cmd = types.StreamCMD(uhd.types.StreamMode.stop_cont)
+        tx_streamer.issue_stream_cmd(stop_cmd)
+
         print("DONE - OK")
 
     except Exception as e:
