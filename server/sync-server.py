@@ -50,7 +50,7 @@ def main(subscribers):
     meas_id = 0
 
     # Unique ID for the experiment based on current UTC timestamp
-    unique_id = str(datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+    unique_id = str(datetime.now(datetime.UTC).strftime("%Y%m%d%H%M%S"))
 
     # Directory where this script is located
     # script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)))

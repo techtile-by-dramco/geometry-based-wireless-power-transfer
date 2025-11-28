@@ -1084,19 +1084,7 @@ def main():
             if t.name in ["TX_thread", "RX_thread", "TX_META_thread"]:
                 t.join(timeout=2)
 
-        # Explicit cleanup
-        try:
-            del tx_streamer
-        except Exception as e:
-            print("Failed to delete tx_streamer:", e)
-        try:
-            del rx_streamer
-        except Exception as e:
-            print("Failed to delete rx_streamer:", e)
-        try:
-            del usrp
-        except Exception as e:
-            print("Failed to delete usrp:", e)
+        usrp.shutdown()
         
         # Allow threads and streams to close properly
         time.sleep(0.5)
