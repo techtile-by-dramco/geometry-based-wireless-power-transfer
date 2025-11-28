@@ -1084,12 +1084,12 @@ def main():
             if t.name in ["TX_thread", "RX_thread", "TX_META_thread"]:
                 t.join(timeout=2)
 
+        usrp.stop_stream()
         usrp.shutdown()
         
         # Allow threads and streams to close properly
         time.sleep(0.5)
         print("OK")
-        sys.exit(0)
 
 if __name__ == "__main__":
     while 1:
