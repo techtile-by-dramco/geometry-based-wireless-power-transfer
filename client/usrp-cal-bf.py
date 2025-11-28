@@ -1082,11 +1082,9 @@ def main():
         # Wait for any threads we created to finish
         for t in threading.enumerate():
             if t.name in ["TX_thread", "RX_thread", "TX_META_thread"]:
+                print("joining", t.name)
                 t.join(timeout=2)
-
-        usrp.stop_stream()
-        usrp.shutdown()
-        
+      
         # Allow threads and streams to close properly
         time.sleep(0.5)
         print("OK")
