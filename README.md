@@ -1,4 +1,4 @@
-# 32_mulit_usrp_sync_only_lb_clo_add_phase
+# Experiment Geometry Based RF Wireless Power Transfer
 
 clo = cable length offset
 
