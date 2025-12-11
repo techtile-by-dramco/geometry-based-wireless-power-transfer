@@ -1,12 +1,33 @@
 #!/bin/bash
 # virtual environment activation script
-# Run with: source path-to/setup-server.sh
-# Might cause terminal to go unstable, not yet found out exactly why
+# Run with: path-to/setup-server.sh
 
 set -e
 
+INSTALL_PACKAGES=1                      # can be put to 0 to speed up activation, once all necessary packages are installed
+CLONE_TILE_MANAGEMENT_REPO=1            # 0 while developing the tile-management repo, 1 otherwise
+TILE_MANAGEMENT_REPO_PARENT="$HOME"     # don't change, other locations not supported
+
 # Absolute path to the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ "${CLONE_TILE_MANAGEMENT_REPO:-0}" == "1" ]]; then
+    echo "Cloning tile-management repo."
+
+    REPO_URL="https://github.com/techtile-by-dramco/tile-management.git"
+    LOCAL_DIR="$HOME/tile-management"
+
+    if [[ -d "$LOCAL_DIR/.git" ]]; then
+        echo "Repository exists. Fetching latest changes..."
+        cd "$LOCAL_DIR" || exit 1
+        git fetch --all
+        git pull origin main   # adjust branch if needed
+        cd - > /dev/null
+    else
+        echo "Repository does not exist. Cloning..."
+        git clone "$REPO_URL" "$LOCAL_DIR"
+    fi
+fi
 
 # Virtual environment directory NEXT TO the script
 VENV_DIR="${SCRIPT_DIR}"
@@ -45,3 +66,6 @@ if [[ "${INSTALL_PACKAGES:-0}" == "1" ]]; then
     pip install --upgrade --quiet ansible-runner ansible-core pyzmq pyvisa numpy scipy
     # add other python packages you might need
 fi
+
+echo "Before running python scripts, make sure to active your venv:"
+echo "  => source bin/activate"

@@ -1,92 +1,280 @@
-from utils.ansible_utils import get_target_hosts
-import ansible_runner
-import shutil
 import os
+import sys
+import yaml
+import argparse
+import config
 
-# Some basic config
-tiles = "A05 A06 A07 A08 A09 A10" # hosts (clients) to set up
-#tiles = "ceiling" # hosts (clients) to set up
-repository_name = 'geometry-based-wireless-power-transfer'  # Name of the git repository
-organisation_name = 'techtile-by-dramco'
+parser = argparse.ArgumentParser(
+    description="""
+Setup the tiles' raspberry pi's so they can run the experiment.
 
-# Rest of the configuration we obtain automatically
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_dir = os.path.dirname(script_dir)
-inventory_path = os.path.join(project_dir, 'ansible/inventory/hosts.yaml')
-host_list = get_target_hosts(inventory_path, limit=tiles, suppress_warnings=True)
+This involves:
+    - making sure all installed packages are up-to-date
+    - installing required packages
+    - pulling both the tile-management and the experiment repo
+    - downloading the b210 firmware images
+    - testing if the UHD python API works
+""",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+)
 
-print("Project directory: ", project_dir)
-print("Targeting", len(host_list), "hosts:", [h.name for h in host_list])
+parser.add_argument(
+    "--ansible-output", "-a",
+    action="store_true",
+    help="Enable ansible output"
+)
 
-venv_path = os.path.join(project_dir, "server")
-venv_bin_path = os.path.join(venv_path, "bin")
+parser.add_argument(
+    "--skip-apt", "-s",
+    action="store_true",
+    help="Skip apt update/upgrade and apt install <extra-packages> (defined in experiment-settings.yaml)"
+)
 
-env = os.environ.copy()
-env["PATH"] = f"{venv_bin_path}:{env['PATH']}"  # ensures runner uses venv ansible-playbook
-env["VIRTUAL_ENV"] = venv_path
+parser.add_argument(
+    "--install-only", "-i",
+    action="store_true",
+    help="Run apt update/upgrade and apt install <extra-packages> (defined in experiment-settings.yaml)"
+)
 
-try:
-    # Pull the repo on the client
-    r = ansible_runner.run(
-        private_data_dir=project_dir,
-        playbook=os.path.join(project_dir, 'ansible/server/pull-repo.yaml'), # paths relative to private_data_dir, didn't seem to work
-        inventory=inventory_path,
-        extravars={
-            'org_name': organisation_name,
-            'repo_name': repository_name,
-        },
-        limit=tiles,
-        envvars=env
+parser.add_argument(
+    "--repos-only", "-r",
+    action="store_true",
+    help="Only pull the required repositories"
+)
+
+parser.add_argument(
+    "--check-uhd-only", "-c",
+    action="store_true",
+    help="Only check if the UHD python API is available"
+)
+
+args = parser.parse_args()
+
+if args.skip_apt and args.install_only:
+    print("Conflicting arguments: --skip-apt & --install-only")
+    parser.print_help()
+    sys.exit(config.ERRORS["ARGUMENT_ERROR"])
+
+if args.repos_only and args.install_only:
+    print("Conflicting arguments: --repos-only & --install-only")
+    parser.print_help()
+    sys.exit(config.ERRORS["ARGUMENT_ERROR"])
+    
+if args.repos_only and args.check_uhd_only:
+    print("Conflicting arguments: --repos-only & --install-only")
+    parser.print_help()
+    sys.exit(config.ERRORS["ARGUMENT_ERROR"])
+    
+if args.check_uhd_only and args.install_only:
+    print("Conflicting arguments: --repos-only & --install-only")
+    parser.print_help()
+    sys.exit(config.ERRORS["ARGUMENT_ERROR"])
+
+# We start by setting some paths
+settings_path = os.path.join(config.PROJECT_DIR, "experiment-settings.yaml")
+
+# Check if the tile-management repo is in the default location (no use in continuing if it's not)
+if not config.check_tile_management_repo():
+    sys.exit(config.ERRORS["REPO_ERROR"])
+
+# Import code from the tile-management repo
+sys.path.append(config.UTILS_DIR)
+from ansible_utils import get_target_hosts, run_playbook
+
+# Output some general information before we start
+print("Experiment project directory: ", config.PROJECT_DIR) # should point to tile-management repo clone
+
+# Read experiment settings
+with open(settings_path, "r") as f:
+    experiment_settings = yaml.safe_load(f)
+
+tiles = experiment_settings.get("tiles", "")
+if len(tiles) == 0:
+    print("The experiment doesn't target any tiles.")
+    sys.exit(config.ERRORS["NO_TILES_ERROR"])
+test_connectivity = experiment_settings.get("test_connectivity", True)
+halt_on_connectivity_failure = experiment_settings.get("halt_on_connectivity_failure", True)
+extra_packages = experiment_settings.get("extra_packages", "")
+experiment_repo = experiment_settings.get("experiment_repo", "")
+organisation = experiment_settings.get("organisation", "")
+
+# host list can be used to identify individual tiles from group names
+# We don't need it to run ansible playbooks, but it is a first check to see if the tiles are specified correctly
+host_list = get_target_hosts(config.INVENTORY_PATH, limit=tiles, suppress_warnings=True)
+
+# reassign tiles, wrongly specified tiles have been removed from list
+tiles = " ".join(host_list)
+print("Working on", len(host_list) ,"tile(s):", tiles)
+
+# First we test connectivity
+nr_active_tiles = 0
+if test_connectivity:
+    print("Testing connectivity ... ")
+    playbook_path = os.path.join(config.PLAYBOOK_DIR, "ping.yaml")
+
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars=None,
+        hosts=tiles,
+        mute_output=not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
     )
 
-    # Print the status and return code
-    print("Status:", r.status)   # e.g. 'successful' or 'failed'
-    print("Return code:", r.rc)
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
+else:
+    # we did not test connectivity so we assume all tiles are active
+    nr_active_tiles = len(host_list)
+             
+prev_nr_active_tiles = nr_active_tiles
 
-    # Optionally, print stdout of all tasks
-    for event in r.events:
-        if 'stdout' in event:
-            print(event['stdout'])
+if not (args.skip_apt or args.repos_only or args.check_uhd_only):
+    print("Running apt update/upgrade ... ")
+    playbook_path = os.path.join(config.PLAYBOOK_DIR, "update-upgrade.yaml")
+
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars=None,
+        hosts=tiles,
+        mute_output=not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
+    )
+
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
+
+    print("Updated packages on tiles(s):", tiles)
+    prev_nr_active_tiles = nr_active_tiles
+
+    print("Installing extra packages ... ")
+    playbook_path = os.path.join(config.PLAYBOOK_DIR, "install-packages.yaml")
+
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars={
+            'extra_packages': extra_packages,
+        },
+        hosts=tiles,
+        mute_output=not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
+    )
     
-    if r.rc != 0:
-        raise RuntimeError(f"Ansible playbook failed with return code {r.rc}")
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
     
-    # Now that we have the repo on the client, we can run scripts
-    # First thing we do is check if UHD is up-and-running
-    r = ansible_runner.run(
-        private_data_dir=project_dir,
-        playbook=os.path.join(project_dir, 'ansible/server/run-script.yaml'),
-        inventory=inventory_path,
-        extravars={
-            'script_path': os.path.join('/home/pi/', repository_name, 'ansible/tiles/check-uhd.sh'),
+    print("Updated packages on tiles(s):", tiles)
+    prev_nr_active_tiles = nr_active_tiles
+
+if (not args.install_only) and (not args.check_uhd_only):
+    print("Pulling the tile-management repo ... ")
+    playbook_path = os.path.join(config.PLAYBOOK_DIR, "pull-repo.yaml")
+    
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars={
+            'org_name': config.TILE_MANAGEMENT_REPO_ORG,
+            'repo_name': config.TILE_MANAGEMENT_REPO_NAME
+        },
+        hosts=tiles,
+        mute_output=not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
+    )
+    
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
+       
+    print("Pulling the experiment repo:", experiment_repo ,"... ")
+    
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars={
+            'org_name': organisation,
+            'repo_name': experiment_repo
+        },
+        hosts=tiles,
+        mute_output= not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
+    )
+    
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
+    
+    print("Pulled all repositories on tiles(s):", tiles)
+    prev_nr_active_tiles = nr_active_tiles
+    
+if (not args.install_only) and (not args.repos_only):
+    print("Checking uhd ... ")
+    playbook_path = os.path.join(config.PLAYBOOK_DIR, "run-script.yaml")
+    
+    (nr_active_tiles, tiles, failed_tiles) = run_playbook(
+        config.PROJECT_DIR,
+        playbook_path,
+        config.INVENTORY_PATH,
+        extra_vars={
+            'script_path': os.path.join(config.TILE_MANAGEMENT_REPO_DIR, 'tiles/check-uhd.sh'),
             'sudo': 'yes',
             'sudo_flags': '-E'
         },
-        limit=tiles,
-        envvars=env
+        hosts=tiles,
+        mute_output=not(args.ansible_output),
+        suppress_warnings=True,
+        cleanup=True
     )
+    
+    if not (nr_active_tiles == len(host_list)):
+        print("Unable to connect to all tiles.")
+        print("Inactive tiles:", failed_tiles)
+        if halt_on_connectivity_failure:
+            print("Aborting (halt_on_connectivity_failure = True)")
+            sys.exit(config.ERRORS["CONNECTIVITY_ERROR"])
+        else:
+            print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
 
-    # Print the status and return code
-    print("Status:", r.status)   # e.g. 'successful' or 'failed'
-    print("Return code:", r.rc)
-
-    # Optionally, print stdout of all tasks
-    for event in r.events:
-        if 'stdout' in event:
-            print(event['stdout'])
-
-    if r.rc != 0:
-        raise RuntimeError(f"Ansible playbook failed with return code {r.rc}")
-
-    # Todo (optionally): run script (on the client) that sets up venv and downloads necessary packages through pip
-
-except FileNotFoundError as e:
-    print(f"File not found: {e}")
-except RuntimeError as e:
-    print(f"Runtime error: {e}")
-except Exception as e:
-    print(f"Unexpected error: {e}")
-finally:
-    # cleanup directories created by ansible-runner
-    shutil.rmtree(os.path.join(project_dir, "artifacts"), ignore_errors=True)
-    shutil.rmtree(os.path.join(project_dir, "env"), ignore_errors=True)
+    print("UHD python API available on tiles(s):", tiles)
+    
+print("Done.")
