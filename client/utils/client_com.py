@@ -93,7 +93,7 @@ class Client:
                 frame = frame.encode()
             frames.append(frame)
 
-        self.sock.send_multipart(frames)
+        self.socket.send_multipart(frames)
 
     def _run(self):
         poller = zmq.Poller()
