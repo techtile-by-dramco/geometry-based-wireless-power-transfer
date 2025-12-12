@@ -87,6 +87,9 @@ class Server:
                     elif msg_type == "response":
                         if not self.silent:
                             print(f"[RESPONSE] {identity.decode()}: {msg_payload}")
+                    else:
+                        if not self.silent:
+                            print(f"[CUSTOM] {identity.decode()}: {msg_payload}")
 
                 self._purge_dead()
 
