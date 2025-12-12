@@ -88,7 +88,7 @@ class Server:
                         if not self.silent:
                             print(f"[RESPONSE] {identity.decode()}: {msg_payload}")
 
-                self.purge_dead()
+                self._purge_dead()
 
         except KeyboardInterrupt:
             # Interrupt outside poll, e.g. between iterations
@@ -96,7 +96,7 @@ class Server:
         finally:
             self.cleanup()
 
-    def purge_dead(self):
+    def _purge_dead(self):
         now = datetime.utcnow()
         dead = []
         for cid, info in list(self.clients.items()):
@@ -123,3 +123,43 @@ class Server:
                 print("connected clients:")
                 for cid, info in list(self.clients.items()):
                     print(cid, "- last seen:", info["last_seen"])
+
+    def send(self, client_id, msg_type, *payload_frames):
+        """
+        Send a message to a specific connected client.
+
+        Parameters
+        ----------
+        client_id : bytes
+            The ROUTER identity of the client.
+        msg_type : str
+            Message type string (e.g., 'command', 'ping', etc.).
+        payload_frames : list of bytes or str
+            Optional additional frames after the message type.
+        """
+        if client_id not in self.clients:
+            raise ValueError(f"Client {client_id!r} is not connected.")
+
+        # Build multipart message
+        frames = [client_id, msg_type.encode()]
+        for frame in payload_frames:
+            if isinstance(frame, str):
+                frame = frame.encode()
+            frames.append(frame)
+
+        self.sock.send_multipart(frames)
+
+    def broadcast(self, msg_type, *payload_frames):
+        """
+        Send a message to all currently connected clients.
+
+        Parameters
+        ----------
+        msg_type : str
+            Message type string.
+        payload_frames : list of bytes or str
+            Optional frames after the message type.
+        """
+        for cid in list(self.clients.keys()):
+            print("sending to", cid)
+            self.send(cid, msg_type, *payload_frames)

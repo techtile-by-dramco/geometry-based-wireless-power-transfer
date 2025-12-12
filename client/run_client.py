@@ -33,7 +33,7 @@ signal.signal(signal.SIGINT, handle_signal)
 signal.signal(signal.SIGTERM, handle_signal)
 
 client.on("ping", handle_ping)
-client.on("custom", handle_custom)
+client.on("sync", handle_custom)
 
 if __name__ == "__main__":
     client.start()
