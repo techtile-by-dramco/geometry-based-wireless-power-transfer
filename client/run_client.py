@@ -25,7 +25,7 @@ def handle_ping(command, args):
 def handle_custom(command, args):
     print("Received sync command:", command, args)
     ts = datetime.now(timezone.utc)
-    client.send("ack", ts)
+    client.send("ack", ts.isoformat())
 
 def handle_signal(signum, frame):
     print("\nStopping client...")
