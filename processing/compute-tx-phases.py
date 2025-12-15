@@ -59,4 +59,4 @@ with open(output_path_friis, "w") as f:
 
 with open(output_path_benchmark, "w") as f:
     for tile_name, a in antennas.items():
-        f.write(f'{tile_name}: {0}\n')
+        f.write(f'{tile_name}: {0.0}\n')
