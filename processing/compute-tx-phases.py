@@ -6,7 +6,8 @@ from matplotlib.patches import Rectangle
 
 
 #################### CONFIGURATIONS ####################
-output_path = "../client/tx-phases-friis.yml"
+output_path_benchmark = "../client/tx-phases-benchmark.yml"
+output_path_friis = "../client/tx-phases-friis.yml"
 ########################################################
 
 
@@ -38,7 +39,7 @@ f = 920e6  # Antenna frequency (Hz)
 c = 3e8  # Speed of light (m/s)
 lambda_ = c / f  # Wavelength (m)
 
-with open(output_path, "w") as f:
+with open(output_path_friis, "w") as f:
 
     for tile_name, a in antennas.items():
         d_EN = np.linalg.norm(a["pos"] - target_location)  # Scalar distances (L x 1)
@@ -54,3 +55,8 @@ with open(output_path, "w") as f:
 
         antennas[tile_name]["tx_phase"] = np.rad2deg(np.angle(w))
         f.write(f'{tile_name}: {antennas[tile_name]["tx_phase"]}\n')
+
+
+with open(output_path_benchmark, "w") as f:
+    for tile_name, a in antennas.items():
+        f.write(f'{tile_name}: {0}\n')
