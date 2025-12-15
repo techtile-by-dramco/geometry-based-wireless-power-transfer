@@ -17,6 +17,8 @@ class Server:
         self.silent = silent
         self.running = True
         self.thread = None
+        # Event handling
+        self.callbacks = {}
 
     def start(self):
         """Start the server in a background thread."""
@@ -35,7 +37,11 @@ class Server:
         if self.thread is not None:
             self.thread.join()
 
-    def cleanup(self):
+    def on(self, msg_type, func):
+        """Register a callback for a given server command."""
+        self.callbacks[msg_type] = func
+
+    def _cleanup(self):
         """Close resources cleanly."""
         print("\nShutting down server...")
 
@@ -61,7 +67,7 @@ class Server:
         try:
             while self.running:
                 try:
-                    messagings = dict(poller.poll(1000))  # may be interrupted
+                    messages = dict(poller.poll(1000))  # may be interrupted
                 except zmq.error.ZMQError:
                     break
                 except KeyboardInterrupt:
@@ -69,7 +75,7 @@ class Server:
                     self.running = False
                     break
 
-                if self.messaging in messagings:
+                if self.messaging in messages:
                     frames = self.messaging.recv_multipart()
                     if not frames:
                         continue
@@ -87,12 +93,16 @@ class Server:
                     if msg_type == "heartbeat":
                         if not self.silent:
                             print(f"[HEARTBEAT] {identity.decode()}")
-                    elif msg_type == "response":
-                        if not self.silent:
-                            print(f"[RESPONSE] {identity.decode()}: {msg_payload}")
                     else:
                         if not self.silent:
-                            print(f"[CUSTOM] {identity.decode()}: {msg_payload}")
+                            print(f"[MESSAGE] {identity.decode()}: {msg_payload}")
+                        if msg_type in self.callbacks:
+                            try:
+                                self.callbacks[msg_type](identity.decode(), msg_payload)
+                            except Exception as e:
+                                print(f"Callback error for {msg_type}: {e}")
+                        else:
+                            print("unhandled message")
 
                 self._purge_dead()
 
@@ -100,7 +110,7 @@ class Server:
             # Interrupt outside poll, e.g. between iterations
             pass
         finally:
-            self.cleanup()
+            self._cleanup()
 
     def _purge_dead(self):
         now = datetime.utcnow()
@@ -129,6 +139,9 @@ class Server:
                 print("connected clients:")
                 for cid, info in list(self.clients.items()):
                     print(cid, "- last seen:", info["last_seen"])
+
+    def get_connected(self):
+        return self.clients
 
     def send(self, client_id, msg_type, *payload_frames):
         """
