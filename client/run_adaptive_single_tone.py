@@ -6,6 +6,7 @@ import argparse, shlex
 from datetime import datetime, timezone, timedelta
 import uhd
 import numpy as np
+import yaml
 
 """Parse the command line arguments"""
 parser = argparse.ArgumentParser()

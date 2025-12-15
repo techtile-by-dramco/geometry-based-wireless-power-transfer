@@ -1,3 +1,22 @@
+''' ____  ____      _    __  __  ____ ___
+   |  _ \|  _ \    / \  |  \/  |/ ___/ _ \
+   | | | | |_) |  / _ \ | |\/| | |  | | | |
+   | |_| |  _ <  / ___ \| |  | | |__| |_| |
+   |____/|_| \_\/_/   \_\_|  |_|\____\___/
+                             research group
+                               dramco.be/
+  
+     KU Leuven - Technology Campus Gent,
+     Gebroeders De Smetstraat 1,
+     B-9000 Gent, Belgium
+  
+           File: run_server.py
+        Created: 2025-12-12
+         Author: Geoffrey Ottoy
+  
+    Description: 
+'''
+
 from utils.server_com import Server
 import signal
 import time
@@ -24,33 +43,58 @@ if not config.check_tile_management_repo():
 sys.path.append(config.UTILS_DIR)
 from ansible_utils import get_target_hosts, run_playbook
 
-# Read experiment settings
+# ---------------------------------------------------------
+# Load experiment settings
+# ---------------------------------------------------------
 with open(settings_path, "r") as f:
     experiment_settings = yaml.safe_load(f)
 
+# Determine which tiles are targeted by the experiment
 tiles = experiment_settings.get("tiles", "")
 if len(tiles) == 0:
     print("The experiment doesn't target any tiles.")
     sys.exit(config.ERRORS["NO_TILES_ERROR"])
 
+# Retrieve the host list for the targeted tiles
 host_list = get_target_hosts(config.INVENTORY_PATH, limit=tiles, suppress_warnings=True)
+
+# Initialize the transmission status dictionary for each host
+# "tx-done" indicates whether the host has completed its last transmission
 tx_status = {host: {"tx-done": True} for host in host_list}
 
+# ---------------------------------------------------------
+# Configure server parameters
+# ---------------------------------------------------------
 server_settings = experiment_settings.get("server", "")
+# Heartbeat interval for client liveness detection
 heartbeat_interval = experiment_settings.get("heartbeat_interval", "") + 10
 messaging_port = server_settings.get("messaging_port", "")
 sync_port = server_settings.get("sync_port", "")
 
-server = Server(msg_port=messaging_port, sync_port=sync_port, heartbeat_timeout=heartbeat_interval, silent=True)
+# Instantiate the server object
+server = Server(
+    msg_port=messaging_port,
+    sync_port=sync_port,
+    heartbeat_timeout=heartbeat_interval,
+    silent=True  # suppress verbose server output
+)
 
+# ---------------------------------------------------------
+# Signal handling for graceful shutdown
+# ---------------------------------------------------------
 def handle_signal(signum, frame):
+    """Stop the server when a SIGINT or SIGTERM is received."""
     print("\nReceived signal, stopping server...")
     server.stop()
 
 signal.signal(signal.SIGINT, handle_signal)
 signal.signal(signal.SIGTERM, handle_signal)
 
+# ---------------------------------------------------------
+# Callback function for "tx-done" messages from clients
+# ---------------------------------------------------------
 def handle_tx_done(from_host, args):
+    """Mark the host's transmission as complete in the tx_status dict."""
     for h in tx_status:
         if h == from_host:
             tx_status[h]['tx-done'] = True
