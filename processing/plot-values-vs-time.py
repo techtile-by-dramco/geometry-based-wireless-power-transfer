@@ -9,7 +9,7 @@ import sys
 # -------------------------------------------------
 
 DATA_DIR = "../data"
-PREFIX = "adaptive-single-tone"
+PREFIX = "adaptive_single_tone"
 TIMESTAMP = 1765801272
 
 # -------------------------------------------------
@@ -34,7 +34,7 @@ DATA_DIR = os.path.abspath(os.path.join(server_dir, "../data"))
 # -------------------------------------------------
 
 print(f"Loading {DATA_DIR}")
-values = np.load(f"{DATA_DIR}/{TIMESTAMP}-{PREFIX}-values.npy", allow_pickle=True)
+values = np.load(f"{DATA_DIR}/{TIMESTAMP}_{PREFIX}_values.npy", allow_pickle=True)
 
 print(values)
 
