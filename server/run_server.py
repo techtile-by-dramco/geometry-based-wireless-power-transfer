@@ -147,7 +147,7 @@ if __name__ == "__main__":
                 if all_done:
                     # All hosts are ready for the next transmission
                     print("All hosts are ready")
-                    print(f" -> tx-start with duration = {duration} s")
+                    print(" -> Sending SYNC ...")
 
                     # Reset tx-done flags to False before starting a new transmission
                     for h in tx_status:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
                     # Broadcast "tx-start" message to all clients with the duration
                     if server.running:
-                        server.broadcast("tx-start", f"duration={duration}")
+                        server.broadcast("SYNC", "testrun")
                     else:
                         print("Server not running.")
                         
