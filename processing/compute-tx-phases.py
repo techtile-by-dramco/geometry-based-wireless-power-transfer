@@ -37,21 +37,22 @@ out_dict = dict()
 for c in config["antennes"]:
     # only one antenna is used
     ch1 = c["channels"][1]
-    ch0 = c["channels"][0]
     tile_name = c["tile"]
     out_dict[tile_name] = []
-    for ch in c["channels"]:
-        pos = [ch["x"], ch["y"], ch["z"]]
-        phase = 0
-        ampl = AMPLTIUDE
-        d_EN = np.linalg.norm(pos - target_location)  # Scalar distances (L x 1)
+    pos = [ch1["x"], ch1["y"], ch1["z"]]
+    phase = 0
+    ampl = AMPLTIUDE
+    d_EN = np.linalg.norm(pos - target_location)  # Scalar distances (L x 1)
 
-        h = np.exp(-1j * 2 * np.pi / lambda_ * d_EN)
+    h = np.exp(-1j * 2 * np.pi / lambda_ * d_EN)
 
-        # MRT weights
-        w = np.conj(h)
-        out_dict[tile_name].append({"ch":0, "ampl": float(AMPLTIUDE), "phase": float(np.angle(w))})
+    # MRT weights
+    w = np.conj(h)
+    out_dict[tile_name].append({"ch":1, "ampl": float(AMPLTIUDE), "phase": float(np.rad2deg(np.angle(w)))})
+    # CH 0 should be zero in this case
+    out_dict[tile_name].append(
+        {"ch": 0, "ampl": float(0.0), "phase": float(0.0)}
+    )
 
 with open(output_path_friis, "w", encoding="utf-8") as f:
     yaml.safe_dump(out_dict, f, sort_keys=False)
-
