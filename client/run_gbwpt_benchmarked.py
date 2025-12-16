@@ -499,10 +499,6 @@ if __name__ == "__main__":
         # STEP 2: Perform internal loopback measurement with reference signal
         # -------------------------------------------------------------------------
 
-        print(uhd.get_version_string())
-        
-        quit()
-
         file_name_state = file_name + "_loopback"
         measure_loopback(
             usrp,
