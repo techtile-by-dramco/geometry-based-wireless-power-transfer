@@ -19,7 +19,7 @@ frequency: 920e6
 channel: 0
 gain: 80
 rate: 250e3
-duration : 3600                      # time span over which phases are kept constant
+duration : 36000                      # time span over which phases are kept constant
 #duration : 10                       # time span over which phases are kept constant (run_adaptive_single_tone)
 
 extra_packages:                     # list of extra packages to be installed on the tiles' rpi's
