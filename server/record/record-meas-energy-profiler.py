@@ -145,7 +145,7 @@ try:
 
         # Periodic autosave
         if time() - last_save >= SAVE_EVERY:
-            save_data()
+            _save_data_safe()
             last_save = time()
 
         sleep(0.1)
