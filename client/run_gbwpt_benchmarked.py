@@ -31,6 +31,7 @@ RX_GAIN = 22              # Empirically determined receive gain (22 dB without s
 CAPTURE_TIME = 10         # Duration of each capture in seconds
 FREQ = 0                  # Base frequency offset (Hz); 0 means use default center frequency
 # server_ip = "10.128.52.53"  # Optional remote server address (commented out)
+server_ip = "10.128.48.3" 
 meas_id = 0               # Measurement identifier
 exp_id = 0                # Experiment identifier
 # =============================================================================
@@ -49,7 +50,7 @@ iq_socket.bind(f"tcp://*:{50001}")
 
 HOSTNAME = socket.gethostname()[4:]
 file_open = False
-server_ip = None  # populated by settings.yml
+# server_ip = None  # populated by settings.yml
 
 # =============================================================================
 #                           Custom Log Formatter
@@ -905,6 +906,9 @@ def parse_arguments():
         help="IP address of the server (optional)",
         required=False,
     )
+
+    parser.add_argument("--config-file", type=str)
+
 
     # Parse the command-line arguments
     args = parser.parse_args()
