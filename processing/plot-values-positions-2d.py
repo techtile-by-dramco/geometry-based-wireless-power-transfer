@@ -13,7 +13,7 @@ import sys
 
 DATA_DIR = "../data"
 PREFIX = "quasi_multi_tone"
-TIMESTAMP = 1765806131
+TIMESTAMP = 1765907307
 
 to_plot = ["20241107114752", "20241107124328", "20241107091548"]
 cmap = "inferno"
@@ -171,7 +171,7 @@ for tp in to_plot:
     print(f"MAX POWER (raw samples): {np.max(values):.2f} uW")
 
     grid_pos_ids, xi, yi = positions_list.group_in_grids(
-        0.05, min_x=2.7, max_x=3.9, min_y=1.25, max_y=2.4
+        0.03, min_x=2.7, max_x=3.9, min_y=1.25, max_y=2.4
     )
 
     for stat_name, reducer in STAT_FUNCS.items():
