@@ -13,7 +13,7 @@ import sys
 
 DATA_DIR = "../data"
 PREFIX = "quasi_multi_tone"
-TIMESTAMP = 1765907307
+TIMESTAMP = 1765962090
 
 to_plot = ["20241107114752", "20241107124328", "20241107091548"]
 cmap = "inferno"
@@ -192,4 +192,4 @@ for tp in to_plot:
         )
 
     # Uncomment if you want to stop after first tp
-    # exit()
+    exit()
