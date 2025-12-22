@@ -1070,7 +1070,7 @@ def main():
             # phase_corr=phi_LB + phi_P + np.deg2rad(phi_cable),
             phase_corr=phase_corr,
             at_time=start_next_cmd,
-            long_time=False, # Set long_time True if you want to transmit longer than 10 seconds
+            long_time=True, # Set long_time True if you want to transmit longer than 10 seconds
         )
 
         print("DONE")
