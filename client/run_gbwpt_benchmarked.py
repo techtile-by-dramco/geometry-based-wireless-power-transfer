@@ -188,7 +188,8 @@ def rx_ref(usrp, rx_streamer, quit_event, duration, result_queue, start_time=Non
         rx_streamer.issue_stream_cmd(
             uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont)
         )
-        iq_samples = iq_data[:, int(RATE // 10) : num_rx]
+        # iq_samples = iq_data[:, int(RATE // 10) : num_rx]
+        iq_samples = iq_data[:, int(RATE * 1) : num_rx]
 
         np.save(file_name_state, iq_samples)
 
