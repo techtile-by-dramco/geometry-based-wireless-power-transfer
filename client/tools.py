@@ -22,7 +22,7 @@ def to_min_pi_plus_pi(angles, deg=True):
 
     angles = np.asarray(angles)
 
-    thr = 180.0 if deg else np.pi / 2
+    thr = 180.0 if deg else np.pi
     rotate = 360.0 if deg else 2 * np.pi
 
     # ensure positive
