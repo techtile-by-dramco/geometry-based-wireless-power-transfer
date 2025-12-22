@@ -8,6 +8,7 @@ import time
 import sys
 import os
 from datetime import datetime
+from helper import *
 
 # =============================================================================
 #                           Experiment Configuration
@@ -165,4 +166,4 @@ with open(output_path, "w") as f:
 
         print(f"Measure phases")
 
-        # save_phases()
+        save_phases()
