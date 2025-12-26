@@ -64,7 +64,7 @@ poller.register(
 # Track time of the last received message
 
 # Maximum time to wait for messages before breaking out of the inner loop (10 minutes)
-WAIT_TIMEOUT = 60.0 * 10.0
+WAIT_TIMEOUT = 2.0
 
 # Inform the user that the experiment is starting
 print(f"Starting experiment: {unique_id}")
@@ -191,6 +191,7 @@ def wait_till_tx_done(is_stronger: bool):
 
     # Track number of messages received from subscribers
     messages_received = 0
+    first_msg_received = 0.0
     new_msg_received = 0
 
     max_starting_in = 0.0
@@ -211,6 +212,9 @@ def wait_till_tx_done(is_stronger: bool):
         if alive_socket in socks and socks[alive_socket] == zmq.POLLIN:
             # Record time when a new message is received
             new_msg_received = time.time()
+
+            if messages_received == 0:
+                first_msg_received = time.time()
 
             # Receive the message string from the subscriber
             message = alive_socket.recv_string()
@@ -238,7 +242,7 @@ def wait_till_tx_done(is_stronger: bool):
 
             # Send response back to the subscriber
             alive_socket.send_string(str(is_stronger))
-    return max_starting_in, tx_updates
+    return max_starting_in, tx_updates, first_msg_received
 
 def cleanup():
     try:
@@ -277,9 +281,12 @@ try:
             f.write("    iterations:\n")
 
             for i in range(0, 100):
-                next_tx_in, tx_updates = wait_till_tx_done(is_stronger=stronger)
+                next_tx_in, tx_updates, first_msg_received = wait_till_tx_done(
+                    is_stronger=stronger
+                )
 
-                current_max_power = collect_power(next_tx_in)
+                time_to_sleep = time.time() - (first_msg_received+next_tx_in)
+                current_max_power = collect_power(time_to_sleep)
 
                 stronger = current_max_power > prev_power
 
