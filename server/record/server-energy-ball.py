@@ -155,11 +155,11 @@ def send_sync():
     return True
 
 
-def collect_power(tx_time: float) -> float:
+def collect_power(next_tx_in: float) -> float:
     max_samples = []
 
     # sleep till TX+1.0
-    time.sleep(tx_time+1.0 - time.time())
+    time.sleep(next_tx_in + 1.0)
 
     start_time = time.time()
     print(f"Collecting power measurements for {CAPTURE_POWER_TIME} seconds...")
@@ -172,7 +172,7 @@ def collect_power(tx_time: float) -> float:
     except KeyboardInterrupt:
         _handle_interrupt()
 
-    #take median of the max 10 power samples, median to avoid outliers
+    # take median of the max 10 power samples, median to avoid outliers
     max_samples = sorted(max_samples, reverse=True)[:10]
     if not max_samples:
         print("No power samples captured.")
@@ -272,13 +272,13 @@ try:
             if not send_sync():
                 break
             stronger = False
+            prev_power = 0.0
             f.write("    iterations:\n")
 
             for i in range(0, 100):
                 next_tx_in, tx_updates = wait_till_tx_done(is_stronger=stronger)
-                next_tx_time = time.time() + next_tx_in
 
-                max_power = collect_power(next_tx_time)
+                max_power = collect_power(next_tx_in)
 
                 stronger = max_power > prev_power
                 prev_power = max_power
