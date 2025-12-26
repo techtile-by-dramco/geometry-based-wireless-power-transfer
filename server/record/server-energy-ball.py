@@ -223,13 +223,14 @@ def wait_till_tx_done(is_stronger: bool):
                     parts[2],
                     parts[3],
                 )
+                print(
+                    f"{host} phase={applied_phase} delta={applied_delta} starting_in={starting_in} "
+                    f"({messages_received}/{num_subscribers})"
+                )
                 if float(starting_in) > max_starting_in:
                     max_starting_in = float(starting_in)
                 tx_updates.append((host, applied_phase, applied_delta))
-                print(
-                    f"{host} phase={applied_phase} delta={applied_delta} "
-                    f"({messages_received}/{num_subscribers})"
-                )
+
             else:
                 print(f"{message} ({messages_received}/{num_subscribers})")
 
