@@ -29,7 +29,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.start and args.stop:
-    print("Conflicting arguments: --sart & --stop")
+    print("Conflicting arguments: --start & --stop")
     parser.print_help()
     sys.exit(config.ERRORS["ARGUMENT_ERROR"])
 
