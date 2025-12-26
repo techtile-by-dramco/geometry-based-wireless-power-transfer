@@ -1135,7 +1135,9 @@ def main():
 
             logger.debug("Sending TX DONE MODE")
             start_next_cmd += CAPTURE_TIME + margin
-            alive_socket.send_string(f"{HOSTNAME} {applied_phase} {applied_delta} {starting_in(usrp, start_next_cmd)}")
+            alive_socket.send_string(
+                f"{HOSTNAME} {applied_phase} {applied_delta} {delta(usrp, start_next_cmd):.2f}"
+            )
             rx_stronger = alive_socket.recv_string()
             logger.debug("Received from server: %s", rx_stronger)
             stronger = bool(rx_stronger)
