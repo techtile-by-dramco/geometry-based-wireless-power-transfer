@@ -19,7 +19,8 @@ cmap = "inferno"
 wavelen = 3e8 / 920e6
 zoom_val = 2
 PLOT_LAST_VAL = 10  # number of most recent samples to highlight
-GRID_RESOLUTION = 0.03  # in meters
+GRID_RESOLUTION = 0.05  # in meters
+LABEL_IN_WAVELENGTHS = False  # False plots labels in absolute meters
 
 # Grid cell aggregation functions
 STAT_FUNCS = {
@@ -118,6 +119,19 @@ def compute_heatmap(values, grid_pos_ids, reducer):
 
 
 def plot_heatmaps_for_stat(heatmap, xi, yi, x_bf, y_bf, last_positions, stat_name, cmap, zoom_val, wavelen):
+    # Tick labels can be wavelengths or raw positions
+    if LABEL_IN_WAVELENGTHS:
+        xtick_labels = [f"{(x - xi[0]) / wavelen:.2f}" for x in xi][::4]
+        ytick_labels = [f"{(y - yi[0]) / wavelen:.2f}" for y in yi][::4]
+        axis_label = "distance in wavelengths"
+    else:
+        xtick_labels = [f"{x:.2f}" for x in xi][::4]
+        ytick_labels = [f"{y:.2f}" for y in yi][::4]
+        axis_label = "position [m]"
+
+    xtick_pos = zoom_val * np.arange(len(xi))[::4]
+    ytick_pos = zoom_val * np.arange(len(yi))[::4]
+
     # UE marker (only if available)
     ue_position = None
     if (x_bf is not None) and (y_bf is not None):
@@ -157,14 +171,8 @@ def plot_heatmaps_for_stat(heatmap, xi, yi, x_bf, y_bf, last_positions, stat_nam
     ax.set_title(f"{stat_name} | uW")
     img_lin = ax.imshow(upsampled_heatmap, cmap=cmap, origin="lower")
 
-    ax.set_xticks(
-        zoom_val * np.arange(len(xi))[::4],
-        labels=[f"{(x - xi[0]) / wavelen:.2f}" for x in xi][::4],
-    )
-    ax.set_yticks(
-        zoom_val * np.arange(len(yi))[::4],
-        labels=[f"{(y - yi[0]) / wavelen:.2f}" for y in yi][::4],
-    )
+    ax.set_xticks(xtick_pos, labels=xtick_labels)
+    ax.set_yticks(ytick_pos, labels=ytick_labels)
 
     if ue_position is not None:
         ax.add_patch(ue_position)
@@ -174,8 +182,8 @@ def plot_heatmaps_for_stat(heatmap, xi, yi, x_bf, y_bf, last_positions, stat_nam
     cbar = fig.colorbar(img_lin)
     cbar.ax.set_ylabel(f"{stat_name} power [uW]")
 
-    ax.set_xlabel("distance in wavelengths")
-    ax.set_ylabel("distance in wavelengths")
+    ax.set_xlabel(axis_label)
+    ax.set_ylabel(axis_label)
     fig.tight_layout()
     plt.show()
 
@@ -197,20 +205,14 @@ def plot_heatmaps_for_stat(heatmap, xi, yi, x_bf, y_bf, last_positions, stat_nam
         origin="lower",
     )
 
-    ax.set_xticks(
-        zoom_val * np.arange(len(xi))[::4],
-        labels=[f"{(x - xi[0]) / wavelen:.2f}" for x in xi][::4],
-    )
-    ax.set_yticks(
-        zoom_val * np.arange(len(yi))[::4],
-        labels=[f"{(y - yi[0]) / wavelen:.2f}" for y in yi][::4],
-    )
+    ax.set_xticks(xtick_pos, labels=xtick_labels)
+    ax.set_yticks(ytick_pos, labels=ytick_labels)
 
     cbar = fig.colorbar(img_db)
     cbar.ax.set_ylabel(f"{stat_name} power [dB]")
 
-    ax.set_xlabel("distance in wavelengths")
-    ax.set_ylabel("distance in wavelengths")
+    ax.set_xlabel(axis_label)
+    ax.set_ylabel(axis_label)
     fig.tight_layout()
     plt.show()
 
