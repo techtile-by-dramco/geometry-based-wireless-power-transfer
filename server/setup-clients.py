@@ -59,12 +59,12 @@ if args.repos_only and args.install_only:
     print("Conflicting arguments: --repos-only & --install-only")
     parser.print_help()
     sys.exit(config.ERRORS["ARGUMENT_ERROR"])
-    
+
 if args.repos_only and args.check_uhd_only:
     print("Conflicting arguments: --repos-only & --install-only")
     parser.print_help()
     sys.exit(config.ERRORS["ARGUMENT_ERROR"])
-    
+
 if args.check_uhd_only and args.install_only:
     print("Conflicting arguments: --repos-only & --install-only")
     parser.print_help()
@@ -134,12 +134,12 @@ if test_connectivity:
 else:
     # we did not test connectivity so we assume all tiles are active
     nr_active_tiles = len(host_list)
-             
+
 prev_nr_active_tiles = nr_active_tiles
 
 
 print("Installing service... ")
-playbook_path = os.path.join(config.PLAYBOOK_DIR, "setup-service.yaml")
+playbook_path = os.path.join(config.PLAYBOOK_DIR, "install-service.yaml")
 
 (nr_active_tiles, tiles, failed_tiles) = run_playbook(
     config.PROJECT_DIR,
@@ -261,7 +261,7 @@ if (not args.install_only) and (not args.check_uhd_only):
     
     print("Pulled all repositories on tiles(s):", tiles)
     prev_nr_active_tiles = nr_active_tiles
-    
+
 if (not args.install_only) and (not args.repos_only):
     print("Checking uhd ... ")
     playbook_path = os.path.join(config.PLAYBOOK_DIR, "run-script.yaml")
@@ -291,5 +291,5 @@ if (not args.install_only) and (not args.repos_only):
             print("Proceeding with", nr_active_tiles, "tiles(s):", tiles)
 
     print("UHD python API available on tiles(s):", tiles)
-    
+
 print("Done.")
