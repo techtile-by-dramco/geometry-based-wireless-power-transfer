@@ -35,7 +35,7 @@ extra_packages:                     # list of extra packages to be installed on 
 # client_script_name: "run_gbwpt_friis.py"
 # client_script_name: "run_quasi_multi_tone.py"
 #client_script_name: "run_adaptive_single_tone.py"
-client_script_name: "run_gwpt_phases.py"
+client_script_name: "run_gbpwt_phases.py"
 client_script_args:
   - "--config-file"
   - "/home/pi/geometry-based-wireless-power-transfer/experiment-settings.yaml"
