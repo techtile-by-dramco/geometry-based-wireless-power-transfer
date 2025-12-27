@@ -12,8 +12,8 @@ import sys
 # -------------------------------------------------
 
 DATA_DIR = "../data"
-PREFIX = "gbwpt_smc2_old"
-TIMESTAMP = 1765977708
+PREFIX = "sionna0"
+TIMESTAMP = 1766844340
 
 to_plot = ["20241107114752", "20241107124328", "20241107091548"]
 cmap = "inferno"
