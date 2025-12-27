@@ -21,25 +21,26 @@ import queue
 # Values can be overridden by entries in the configuration YAML file.
 # =============================================================================
 
-CMD_DELAY = 0.05          # Command delay (50 ms) between USRP instructions
-RX_TX_SAME_CHANNEL = True # True if loopback occurs between the same RF channel
-CLOCK_TIMEOUT = 1000      # Timeout for external clock locking (in ms)
-INIT_DELAY = 0.2          # Initial delay before starting transmission (200 ms)
-RATE = 250e3              # Sampling rate in samples per second (250 kSps)
-LOOPBACK_TX_GAIN = 50 #70     # Empirically determined transmit gain for loopback tests
-RX_GAIN = 22              # Empirically determined receive gain (22 dB without splitter, 27 dB with splitter)
-CAPTURE_TIME = 10         # Duration of each capture in seconds
-FREQ = 0                  # Base frequency offset (Hz); 0 means use default center frequency
-# server_ip = "10.128.52.53"  # Optional remote server address (commented out)
-server_ip = "10.128.48.3"  
-meas_id = 0               # Measurement identifier
-exp_id = 0                # Experiment identifier
+CMD_DELAY = 0.05  # Command delay (50 ms) between USRP instructions
+RX_TX_SAME_CHANNEL = True  # True if loopback occurs between the same RF channel
+CLOCK_TIMEOUT = 1000  # Timeout for external clock locking (in ms)
+INIT_DELAY = 0.2  # Initial delay before starting transmission (200 ms)
+RATE = 250e3  # Sampling rate in samples per second (250 kSps)
+LOOPBACK_TX_GAIN = (
+    50  # 70     # Empirically determined transmit gain for loopback tests
+)
+RX_GAIN = 22  # Empirically determined receive gain (22 dB without splitter, 27 dB with splitter)
+CAPTURE_TIME = 10  # Duration of each capture in seconds
+FREQ = 0  # Base frequency offset (Hz); 0 means use default center frequency
+# SERVER_IP = "10.128.52.53"  # Optional remote server address (commented out)
+meas_id = 0  # Measurement identifier
+exp_id = 0  # Experiment identifier
 # =============================================================================
 # =============================================================================
 
 results = []
 
-SWITCH_LOOPBACK_MODE = 0x00000006 # which is 110
+SWITCH_LOOPBACK_MODE = 0x00000006  # which is 110
 SWITCH_RESET_MODE = 0x00000000
 
 context = zmq.Context()
@@ -50,7 +51,7 @@ iq_socket.bind(f"tcp://*:{50001}")
 
 HOSTNAME = socket.gethostname()[4:]
 file_open = False
-# server_ip = None  # populated by settings.yml
+# SERVER_IP = None  # populated by settings.yml
 
 # =============================================================================
 #                           Custom Log Formatter
@@ -58,6 +59,7 @@ file_open = False
 # This formatter adds timestamps with fractional seconds to log messages,
 # allowing for more precise event timing (useful in measurement systems).
 # =============================================================================
+
 
 class LogFormatter(logging.Formatter):
     """Custom log formatter that prints timestamps with fractional seconds."""
@@ -76,6 +78,7 @@ class LogFormatter(logging.Formatter):
         else:
             formatted_date = LogFormatter.pp_now()
         return formatted_date
+
 
 # =============================================================================
 #                           Logger and Channel Configuration
@@ -193,8 +196,12 @@ def rx_ref(usrp, rx_streamer, quit_event, duration, result_queue, start_time=Non
 
         np.save(file_name_state, iq_samples)
 
-        phase_ch0, freq_slope_ch0 = tools.get_phases_and_apply_bandpass(iq_samples[0, :])
-        phase_ch1, freq_slope_ch1 = tools.get_phases_and_apply_bandpass(iq_samples[1, :])
+        phase_ch0, freq_slope_ch0 = tools.get_phases_and_apply_bandpass(
+            iq_samples[0, :]
+        )
+        phase_ch1, freq_slope_ch1 = tools.get_phases_and_apply_bandpass(
+            iq_samples[1, :]
+        )
 
         logger.debug("Frequency offset CH0: %.4f", freq_slope_ch0 / (2 * np.pi))
         logger.debug("Frequency offset CH1: %.4f", freq_slope_ch1 / (2 * np.pi))
@@ -341,6 +348,7 @@ def wait_till_go_from_server(ip, _connect=True):
     alive_socket.close()
     sync_socket.close()
 
+
 def send_usrp_in_tx_mode(ip):
     tx_mode_socket = context.socket(zmq.REQ)
     tx_mode_socket.connect(f"tcp://{ip}:{5559}")
@@ -349,7 +357,7 @@ def send_usrp_in_tx_mode(ip):
     tx_mode_socket.close()
 
 
-def setup(usrp, server_ip, connect=True):
+def setup(usrp, SERVER_IP, connect=True):
     rate = RATE
     mcr = 20e6
     assert (
@@ -385,10 +393,8 @@ def setup(usrp, server_ip, connect=True):
     # Step2: set the time at the next pps (synchronous for all boards)
     # this is better than set_time_next_pps as we wait till the next PPS to transition and after that we set the time.
     # this ensures that the FPGA has enough time to clock in the new timespec (otherwise it could be too close to a PPS edge)
-    wait_till_go_from_server(server_ip, connect)
+    wait_till_go_from_server(SERVER_IP, connect)
     logger.info("Setting device timestamp to 0...")
-    usrp.set_time_unknown_pps(uhd.types.TimeSpec(0.0))
-
     usrp.set_time_unknown_pps(uhd.types.TimeSpec(0.0))
     logger.debug("[SYNC] Resetting time.")
     logger.info(f"RX GAIN PROFILE CH0: {usrp.get_rx_gain_names(0)}")
@@ -533,7 +539,9 @@ def starting_in(usrp, at_time):
     return f"Starting in {delta(usrp, at_time):.2f}s"
 
 
-def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_time=None):
+def measure_pilot(
+    usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_time=None
+):
     """
     Perform a pilot measurement using the specified USRP device and RX streamer.
 
@@ -568,7 +576,6 @@ def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_t
     # start_time = uhd.types.TimeSpec(at_time)
     # logger.debug(starting_in(usrp, at_time))
 
-
     # user_settings = None
     # try:
     #     user_settings = usrp.get_user_settings_iface(1)
@@ -584,7 +591,6 @@ def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_t
     # except Exception as e:
     #     logger.error(e)
 
-    
     # tx_thr = tx_thread(
     #     usrp,
     #     tx_streamer,
@@ -594,12 +600,8 @@ def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_t
     #     start_time=start_time,
     # )
 
-    
     # # Thread responsible for handling TX metadata (timestamps, etc.)
     # tx_meta_thr = tx_meta_thread(tx_streamer, quit_event)
-
-    
-
 
     # # Start RX thread for data acquisition
     # rx_thr = rx_thread(
@@ -631,12 +633,11 @@ def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_t
     # # Clear event for next use
     # quit_event.clear()
 
-
-   # ------------------------------------------------------------
+    # ------------------------------------------------------------
     # 1. Configure transmit signal amplitudes
     # ------------------------------------------------------------
-    amplitudes = [0.0, 0.0]              # Initialize amplitude array for both channels
-    amplitudes[LOOPBACK_TX_CH] = 0.8     # Enable TX on the selected loopback channel
+    amplitudes = [0.0, 0.0]  # Initialize amplitude array for both channels
+    amplitudes[LOOPBACK_TX_CH] = 0.8  # Enable TX on the selected loopback channel
 
     # ------------------------------------------------------------
     # 2. Set the transmission start time
@@ -698,7 +699,7 @@ def measure_pilot(usrp, tx_streamer, rx_streamer, quit_event, result_queue, at_t
     # ------------------------------------------------------------
     # 6. Signal all threads to stop and wait for them to finish
     # ------------------------------------------------------------
-    quit_event.set()   # Triggers thread termination
+    quit_event.set()  # Triggers thread termination
     tx_thr.join()
     rx_thr.join()
     tx_meta_thr.join()
@@ -732,8 +733,8 @@ def measure_loopback(
     # ------------------------------------------------------------
     # 1. Configure transmit signal amplitudes
     # ------------------------------------------------------------
-    amplitudes = [0.0, 0.0]              # Initialize amplitude array for both channels
-    amplitudes[LOOPBACK_TX_CH] = 0.8     # Enable TX on the selected loopback channel
+    amplitudes = [0.0, 0.0]  # Initialize amplitude array for both channels
+    amplitudes[LOOPBACK_TX_CH] = 0.8  # Enable TX on the selected loopback channel
 
     # ------------------------------------------------------------
     # 2. Set the transmission start time
@@ -795,7 +796,7 @@ def measure_loopback(
     # ------------------------------------------------------------
     # 6. Signal all threads to stop and wait for them to finish
     # ------------------------------------------------------------
-    quit_event.set()   # Triggers thread termination
+    quit_event.set()  # Triggers thread termination
     tx_thr.join()
     rx_thr.join()
     tx_meta_thr.join()
@@ -810,7 +811,6 @@ def measure_loopback(
     # 8. Clear the quit event flag to prepare for the next measurement
     # ------------------------------------------------------------
     quit_event.clear()
-
 
 
 def tx_phase_coh(usrp, tx_streamer, quit_event, phase_corr, at_time, long_time=True):
@@ -865,7 +865,7 @@ def tx_phase_coh(usrp, tx_streamer, quit_event, phase_corr, at_time, long_time=T
     tx_meta_thr = tx_meta_thread(tx_streamer, quit_event)
 
     # Send USRP is in TX mode for scope measurements
-    send_usrp_in_tx_mode(server_ip)
+    send_usrp_in_tx_mode(SERVER_IP)
 
     # Allow transmission to continue for the configured duration
     if long_time:
@@ -892,12 +892,13 @@ def parse_arguments():
     Parse command-line arguments for the beamforming (BF) application.
 
     This function checks for the optional server IP argument (-i or --ip)
-    and updates the global variable `server_ip` if provided.
+    and updates the global variable `SERVER_IP` if provided. It also
+    allows overriding the TX phase file.
 
     Example:
         python script.py -i 192.168.1.10
     """
-    global server_ip
+    global SERVER_IP
 
     # Create an argument parser with a brief description
     parser = argparse.ArgumentParser(description="Beamforming control script")
@@ -912,7 +913,12 @@ def parse_arguments():
     )
 
     parser.add_argument("--config-file", type=str)
-
+    parser.add_argument(
+        "--tx-phase-file",
+        type=str,
+        default="tx-phases-smc2-old.yml",
+        help="Path to TX phase YAML (default: tx-phases-smc2-old.yml)",
+    )
 
     # Parse the command-line arguments
     args = parser.parse_args()
@@ -920,21 +926,26 @@ def parse_arguments():
     # If the user provided an IP address, apply it
     if args.ip:
         logger.debug(f"Setting server IP to: {args.ip}")
-        server_ip = args.ip
+        SERVER_IP = args.ip
+    return args
 
 
 def main():
     global meas_id, file_name_state
 
-    parse_arguments()
+    args = parse_arguments()
 
     try:
         # Attempt to open and load calibration settings from the YAML file
-        with open(os.path.join(os.path.dirname(__file__), "cal-settings.yml"), "r") as file:
+        with open(
+            os.path.join(os.path.dirname(__file__), "cal-settings.yml"), "r"
+        ) as file:
             vars = yaml.safe_load(file)
             globals().update(vars)  # update the global variables with the vars in yaml
     except FileNotFoundError:
-        logger.error("Calibration file 'cal-settings.yml' not found in the current directory.")
+        logger.error(
+            "Calibration file 'cal-settings.yml' not found in the current directory."
+        )
         exit()
     except yaml.YAMLError as e:
         logger.error(f"Error parsing 'cal-settings.yml': {e}")
@@ -952,9 +963,7 @@ def main():
 
         # Initialize USRP device with custom FPGA image and integer mode
         usrp = uhd.usrp.MultiUSRP(
-            "enable_user_regs, " \
-            f"fpga={fpga_path}, " \
-            "mode_n=integer"
+            "enable_user_regs, " f"fpga={fpga_path}, " "mode_n=integer"
         )
         logger.info("Using Device: %s", usrp.get_pp_string())
 
@@ -963,14 +972,14 @@ def main():
         # -------------------------------------------------------------------------
 
         # Set up TX and RX streamers and establish connection
-        tx_streamer, rx_streamer = setup(usrp, server_ip, connect=True)
+        tx_streamer, rx_streamer = setup(usrp, SERVER_IP, connect=True)
 
         # Event used to control thread termination
         quit_event = threading.Event()
 
-        margin = 5.0                     # Safety margin for timing
-        cmd_time = margin # Duration for one measurement step
-        start_next_cmd = cmd_time        # Timestamp for the next scheduled command
+        margin = 5.0  # Safety margin for timing
+        cmd_time = margin  # Duration for one measurement step
+        start_next_cmd = cmd_time  # Timestamp for the next scheduled command
 
         # Queue to collect measurement results and communicate between threads
         result_queue = queue.Queue()
@@ -1019,13 +1028,15 @@ def main():
         logger.info("Phase LB reference signal in rad: %s", phi_LB)
         logger.info("Phase LB reference signal in degrees: %s", np.rad2deg(phi_LB))
 
-        start_next_cmd += cmd_time + 2.0 + CAPTURE_TIME # Schedule next command
+        start_next_cmd += cmd_time + 2.0 + CAPTURE_TIME  # Schedule next command
 
         # -------------------------------------------------------------------------
         # STEP 3: Load cable phase correction from YAML configuration (if available)
         # -------------------------------------------------------------------------
         phi_cable = 0
-        with open(os.path.join(os.path.dirname(__file__), "ref-RF-cable.yml"), "r") as phases_yaml:
+        with open(
+            os.path.join(os.path.dirname(__file__), "ref-RF-cable.yml"), "r"
+        ) as phases_yaml:
             try:
                 phases_dict = yaml.safe_load(phases_yaml)
                 if HOSTNAME in phases_dict.keys():
@@ -1040,7 +1051,9 @@ def main():
         # STEP 4: Add additional phase to ensure right measurement with the scope
         # -------------------------------------------------------------------------
         phi_offset = 0
-        with open(os.path.join(os.path.dirname(__file__), "tx-phases-smc2-old.yml"), "r") as phases_yaml:
+        with open(
+            os.path.join(os.path.dirname(__file__), args.tx_phase_file), "r"
+        ) as phases_yaml:
             try:
                 phases_dict = yaml.safe_load(phases_yaml)
                 if HOSTNAME in phases_dict.keys():
@@ -1054,14 +1067,14 @@ def main():
         # -------------------------------------------------------------------------
         # STEP 5: Benchmark without phase-aligned beamforming
         # -------------------------------------------------------------------------
-        
+
         alive_socket = context.socket(zmq.REQ)
-        alive_socket.connect(f"tcp://{server_ip}:{5558}")
+        alive_socket.connect(f"tcp://{SERVER_IP}:{5558}")
         logger.debug("Sending TX MODE")
         alive_socket.send_string(f"{HOSTNAME} TX")
         alive_socket.close()
 
-        phase_corr= phi_LB - np.deg2rad(phi_cable) + np.deg2rad(phi_BF)
+        phase_corr = phi_LB - np.deg2rad(phi_cable) + np.deg2rad(phi_BF)
         logger.info("Phase correction in rad: %s", phase_corr)
         logger.info("Phase correction in degrees: %s", np.rad2deg(phase_corr))
 
@@ -1072,7 +1085,7 @@ def main():
             # phase_corr=phi_LB + phi_P + np.deg2rad(phi_cable),
             phase_corr=phase_corr,
             at_time=start_next_cmd,
-            long_time=True, # Set long_time True if you want to transmit longer than 10 seconds
+            long_time=True,  # Set long_time True if you want to transmit longer than 10 seconds
         )
 
         print("DONE")
@@ -1087,6 +1100,7 @@ def main():
         # Allow threads and streams to close properly
         time.sleep(1)
         sys.exit(0)
+
 
 if __name__ == "__main__":
     while 1:
