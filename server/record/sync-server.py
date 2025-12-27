@@ -164,6 +164,6 @@ with open(output_path, "w") as f:
 
         time.sleep(10)
 
-        print(f"Measure phases")
+        # print(f"Measure phases")
 
-        save_phases()
+        # save_phases()
