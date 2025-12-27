@@ -12,14 +12,14 @@ import sys
 # -------------------------------------------------
 
 DATA_DIR = "../data"
-FOLDER = "sionna2"
+FOLDER = "sionna1"
 
 cmap = "inferno"
 
 wavelen = 3e8 / 920e6
 zoom_val = 2
 PLOT_LAST_VAL = 10  # number of most recent samples to highlight
-GRID_RESOLUTION = 0.05  # in meters
+GRID_RESOLUTION = 0.11 * wavelen  # in meters
 LABEL_IN_WAVELENGTHS = False  # False plots labels in absolute meters
 PLOT_DB = False
 
@@ -239,8 +239,9 @@ positions_list = PositionerValues.from_xyz(
 values = np.array([v.pwr_pw / 1e6 for v in o_values], dtype=float)
 print(f"MAX POWER (raw samples): {np.max(values):.2f} uW")
 
+
 grid_pos_ids, xi, yi = positions_list.group_in_grids(
-    GRID_RESOLUTION, min_x=2.7, max_x=3.9, min_y=1.25, max_y=2.4
+    GRID_RESOLUTION #, min_x=2.0, max_x=4.2, min_y=1.0, max_y=2.5
 )
 
 for stat_name, reducer in STAT_FUNCS.items():
@@ -260,4 +261,3 @@ for stat_name, reducer in STAT_FUNCS.items():
         zoom_val=zoom_val,
         wavelen=wavelen,
     )
-
