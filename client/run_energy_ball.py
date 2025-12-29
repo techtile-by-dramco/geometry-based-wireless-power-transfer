@@ -1122,12 +1122,19 @@ def main():
                 prev_delta=prev_delta
             )
 
+            # send first so it doesnt hang on the ZMQ, so it can schedule the capture time
+            start_now_cmd = start_next_cmd
+            start_next_cmd += CAPTURE_TIME + 2 * margin
+            alive_socket.send_string(
+                f"{HOSTNAME} {applied_phase} {applied_delta} {delta(usrp, start_next_cmd):.2f}"
+            )
+
             tx_phase_coh(
                 usrp,
                 tx_streamer,
                 quit_event,
                 phase_corr=applied_phase,
-                at_time=start_next_cmd,
+                at_time=start_now_cmd,
                 long_time=False,  # Set long_time True if you want to transmit longer than 10 seconds
             )
 
@@ -1135,10 +1142,7 @@ def main():
             prev_phase = applied_phase
 
             logger.debug("Sending TX DONE MODE")
-            start_next_cmd += CAPTURE_TIME + 2*margin
-            alive_socket.send_string(
-                f"{HOSTNAME} {applied_phase} {applied_delta} {delta(usrp, start_next_cmd):.2f}"
-            )
+
             rx_stronger = alive_socket.recv_string()
             logger.debug("Received from server: %s", rx_stronger)
             stronger = rx_stronger.lower().strip() == "true"
