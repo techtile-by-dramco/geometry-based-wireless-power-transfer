@@ -86,10 +86,15 @@ rfep = RFEP(settings["ep"]["ip"], settings["ep"]["port"])
 
 print(rfep.get_data())
 
-
 CAPTURE_POWER_TIME = 5
 prev_power = 0
 stop_requested = False
+
+# Log where the server is bound
+print(
+    f"Server listening on host '{host}' (sync tcp://{host}:{sync_port}, "
+    f"alive tcp://{host}:{alive_port}, data tcp://{host}:{data_port})"
+)
 
 def _handle_interrupt(signum=None, frame=None):
     global stop_requested
