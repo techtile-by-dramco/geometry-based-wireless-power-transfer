@@ -1072,7 +1072,7 @@ def main():
         # -------------------------------------------------------------------------
         phi_offset = 0
         with open(
-            os.path.join(os.path.dirname(__file__), "tx-phases-sionna-2SDR.yml"), "r"
+            os.path.join(os.path.dirname(__file__), "tx-phases-sionna-1.yml"), "r"
         ) as phases_yaml:
             try:
                 phases_dict = yaml.safe_load(phases_yaml)
