@@ -157,6 +157,12 @@ def _handle_interrupt(signum=None, frame=None):
     global stop_requested
     stop_requested = True
 
+
+def _handle_tstp(signum=None, frame=None):
+    """Handle Ctrl+Z by triggering cleanup instead of suspend."""
+    _handle_interrupt()
+    cleanup()
+    sys.exit(0)
 def send_sync():
     """
     Synchronize measurement across all subscribers and handle their responses.
@@ -338,6 +344,7 @@ def cleanup():
 
 try:
     signal.signal(signal.SIGINT, _handle_interrupt)
+    signal.signal(signal.SIGTSTP, _handle_tstp)
     with open(output_path, "w") as f:
         # Write experiment metadata to the YAML file
         f.write(f"experiment: {unique_id}\n")
