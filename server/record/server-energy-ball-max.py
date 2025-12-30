@@ -243,8 +243,8 @@ def collect_power(next_tx_in: float) -> float:
     logger.info(
         "Power stats: samples=%d max=%s median=%s",
         len(max_samples),
-        max_samples[0],
-        median_power,
+        _fmt_power(max_samples[0]),
+        _fmt_power(median_power),
     )
     return median_power
 
