@@ -3,6 +3,7 @@ Aggregate all position/value pairs inside each subfolder of ../data
 and plot a heatmap of mean power for the concatenated samples.
 """
 
+import argparse
 import os
 import sys
 import numpy as np
@@ -10,8 +11,7 @@ import matplotlib.pyplot as plt
 
 wavelength = 3e8 / 920e6  # meters
 
-GRID_RES = 0.05*wavelength  # meters
-PLOT_ONLY_FIRST=True
+GRID_RES = 0.1 * wavelength  # meters
 
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data"))
@@ -73,7 +73,7 @@ def compute_heatmap(xs, ys, vs, grid_res):
     return heatmap, counts, x_edges, y_edges, xi, yi
 
 
-def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None):
+def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None, target_rect=None):
     """Render a heatmap with axes in meters."""
     fig, ax = plt.subplots()
     img = ax.imshow(
@@ -82,7 +82,7 @@ def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None):
         cmap=CMAP,
         extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
     )
-    ax.set_title(f"{folder} | mean power per cell [uW]")
+    ax.set_title(f"{os.path.basename(folder)} | mean power per cell [uW]")
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     cbar = fig.colorbar(img, ax=ax)
@@ -101,6 +101,19 @@ def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None):
                         linewidth=2,
                     )
                 )
+    if target_rect:
+        x0, y0, w, h = target_rect
+        ax.add_patch(
+            plt.Rectangle(
+                (x0, y0),
+                w,
+                h,
+                fill=False,
+                edgecolor="cyan",
+                linewidth=2,
+                linestyle="--",
+            )
+        )
     # Optional: annotate with counts to show sample density per cell
     # for i_x in range(counts.shape[0]):
     #     for i_y in range(counts.shape[1]):
@@ -116,10 +129,29 @@ def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None):
     #                 fontsize=8,
     #             )
     fig.tight_layout()
+    plt.savefig(os.path.join(folder, "heatmap.png"))
     plt.show()
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Aggregate positions/values per data subfolder and plot a heatmap."
+    )
+    parser.add_argument(
+        "--plot-all",
+        action="store_true",
+        help="Plot heatmaps for all subfolders (default plots only the most recent).",
+    )
+    parser.add_argument(
+        "--plot-movement",
+        action="store_true",
+        help="Overlay rectangles for the last 5 visited grid cells.",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     if not os.path.isdir(DATA_DIR):
         raise FileNotFoundError(f"DATA_DIR not found: {DATA_DIR}")
 
@@ -148,20 +180,22 @@ def main():
 
         heatmap, counts, x_edges, y_edges, xi, yi = compute_heatmap(xs, ys, vs, GRID_RES)
 
-        # Take the last 5 distinct cells (most recent first), not just the last 5 samples.
-        recent_cells = []
-        seen = set()
-        for cell in reversed(list(zip(xi, yi))):
-            if cell in seen:
-                continue
-            seen.add(cell)
-            recent_cells.append(cell)
-            if len(recent_cells) == 5:
-                break
-        recent_cells.reverse()
+        recent_cells = None
+        if args.plot_movement:
+            # Take the last 5 distinct cells (most recent first), not just the last 5 samples.
+            recent_cells = []
+            seen = set()
+            for cell in reversed(list(zip(xi, yi))):
+                if cell in seen:
+                    continue
+                seen.add(cell)
+                recent_cells.append(cell)
+                if len(recent_cells) == 5:
+                    break
+            recent_cells.reverse()
 
-        plot_heatmap(folder_name, heatmap, counts, x_edges, y_edges, recent_cells)
-        if PLOT_ONLY_FIRST:
+        plot_heatmap(folder_path, heatmap, counts, x_edges, y_edges, recent_cells)
+        if not args.plot_all:
             break
 
 

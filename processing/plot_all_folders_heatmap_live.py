@@ -21,6 +21,7 @@ from plot_all_folders_heatmap import (
     GRID_RES,
     compute_heatmap,
     load_folder,
+    wavelength,
 )
 
 
@@ -77,6 +78,26 @@ def _target_cell(target_xy, x_edges, y_edges):
     return None
 
 
+def _target_rect(target_xy, x_edges, y_edges):
+    """Rectangle covering ~0.1 wavelength, snapped to whole grid cells."""
+    cell = _target_cell(target_xy, x_edges, y_edges)
+    if cell is None:
+        return None
+    ix, iy = cell
+    target_size = 0.1 * wavelength
+    cells_span = max(1, int(round(target_size / GRID_RES)))
+
+    start_ix = max(0, ix - (cells_span - 1) // 2)
+    end_ix = min(len(x_edges) - 2, start_ix + cells_span - 1)
+    start_ix = max(0, end_ix - cells_span + 1)
+
+    start_iy = max(0, iy - (cells_span - 1) // 2)
+    end_iy = min(len(y_edges) - 2, start_iy + cells_span - 1)
+    start_iy = max(0, end_iy - cells_span + 1)
+
+    return x_edges[start_ix], x_edges[end_ix + 1], y_edges[start_iy], y_edges[end_iy + 1]
+
+
 def create_figure(folder_name: str, x_centers, y_centers, z, x_edges, y_edges, target_xy=None):
     fig = go.Figure(
         data=go.Heatmap(
@@ -95,15 +116,15 @@ def create_figure(folder_name: str, x_centers, y_centers, z, x_edges, y_edges, t
     )
     fig.update_yaxes(scaleanchor="x", scaleratio=1)  # lock aspect ratio
 
-    cell = _target_cell(target_xy, x_edges, y_edges)
-    if cell:
-        ix, iy = cell
+    rect = _target_rect(target_xy, x_edges, y_edges)
+    if rect:
+        x0, x1, y0, y1 = rect
         fig.add_shape(
             type="rect",
-            x0=x_edges[ix],
-            x1=x_edges[ix + 1],
-            y0=y_edges[iy],
-            y1=y_edges[iy + 1],
+            x0=x0,
+            x1=x1,
+            y0=y0,
+            y1=y1,
             line=dict(color="cyan", width=3),
             fillcolor="rgba(0,255,255,0.25)",
         )
@@ -152,7 +173,7 @@ def parse_args():
         type=float,
         metavar=("X", "Y", "Z"),
         default=[3.181, 1.774, 0.266],
-        help="Target xyz to highlight (z ignored for cell selection). Default: 3.181 1.774 0.266",
+        help="Target xyz to highlight with a ~0.1-wavelength rectangle (z ignored). Default: 3.181 1.774 0.266",
     )
     return parser.parse_args()
 

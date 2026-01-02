@@ -19,13 +19,17 @@ from sionna.rt import load_scene
 # CONFIG
 # ============================================================
 # Receiver location (single antenna RX)
-target_location = np.array([3.181, 1.774, 0.266], dtype=np.float32)
+target_location = np.array(
+    [3.214765380859375, 1.77064404296875, 0.265255615234375], dtype=np.float32
+) # center of grid
+# target_location = np.array([3.181, 1.774, 0.266], dtype=np.float32) #jarne location
 # target_location = np.array(
 #     [3.201299560546875, 1.70512451171875, 0.23005308532714844], dtype=np.float32
 # )
 # Specular multipath control
-specular_order = 2  # start with LoS only
 
+specular_order = 1 # 0=LOS only, 1=first order, 2=second order, ...
+SDR = True  # enable specular/diffuse/refraction
 
 positions_url = (
     "https://raw.githubusercontent.com/techtile-by-dramco/"
@@ -195,9 +199,9 @@ paths = solver(
     scene=scene,
     max_depth=specular_order,
     los=True,
-    specular_reflection=True,
-    diffuse_reflection=True,
-    refraction=True,
+    specular_reflection=SDR,
+    diffuse_reflection=SDR,
+    refraction=SDR,
     synthetic_array=False,
     seed=1,
 )
@@ -344,7 +348,7 @@ output_path = "../client/tx-weights-sionna.yml"
 with open(output_path, "w", encoding="utf-8") as f:
     yaml.safe_dump(out_full_dict, f, sort_keys=False)
 
-    output_path = f"../client/tx-phases-sionna-{specular_order}SDR.yml"
+    output_path = f"../client/tx-phases-sionna-{specular_order}{'' if not SDR else 'SDR'}.yml"
 with open(output_path, "w", encoding="utf-8") as f:
     yaml.safe_dump(out_dict, f, sort_keys=False)
 
