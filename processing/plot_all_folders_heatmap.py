@@ -6,13 +6,16 @@ and plot a heatmap of mean power for the concatenated samples.
 import argparse
 import os
 import sys
-import numpy as np
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
+import numpy as np
 import yaml
 
-wavelength = 3e8 / 920e6  # meters
+WAVELENGTH = 3e8 / 920e6  # meters
 
-GRID_RES = 0.1 * wavelength  # meters
+GRID_RES = 0.1 * WAVELENGTH  # meters
+SMALL_POWER_UW = 1e-3  # threshold for reporting tiny measurements (micro-watts)
 
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data"))
@@ -83,15 +86,31 @@ def load_folder(folder_path):
     return positions, values
 
 
-def compute_heatmap(xs, ys, vs, grid_res):
-    """Bin values onto a 2D grid and compute mean power per cell."""
+def report_small_values(folder_path, vs, threshold=SMALL_POWER_UW):
+    """Log when zero or near-zero power values appear."""
+    zeros = vs == 0.0
+    small = (vs > 0.0) & (vs < threshold)
+    reports = []
+    if zeros.any():
+        reports.append(f"{zeros.sum()} zeros")
+    if small.any():
+        reports.append(f"{small.sum()} below {threshold:.1e} uW (min {vs[small].min():.2e})")
+    if reports:
+        print(f"{os.path.basename(folder_path)}: {', '.join(reports)}")
+
+
+def compute_heatmap(xs, ys, vs, grid_res, agg="mean"):
+    """Bin values onto a 2D grid and compute mean or median power per cell."""
     min_x, max_x = xs.min(), xs.max()
     min_y, max_y = ys.min(), ys.max()
     x_edges = np.arange(min_x, max_x + grid_res, grid_res)
     y_edges = np.arange(min_y, max_y + grid_res, grid_res)
 
     heatmap = np.full((len(x_edges) - 1, len(y_edges) - 1), np.nan, dtype=float)
-    sums = np.zeros_like(heatmap, dtype=float)
+    if agg not in {"mean", "median"}:
+        raise ValueError("agg must be either 'mean' or 'median'")
+    sums = np.zeros_like(heatmap, dtype=float) if agg == "mean" else None
+    cell_values = defaultdict(list) if agg == "median" else None
     counts = np.zeros_like(heatmap, dtype=int)
 
     xi = np.digitize(xs, x_edges) - 1
@@ -99,15 +118,23 @@ def compute_heatmap(xs, ys, vs, grid_res):
 
     for i_x, i_y, v in zip(xi, yi, vs):
         if 0 <= i_x < heatmap.shape[0] and 0 <= i_y < heatmap.shape[1]:
-            sums[i_x, i_y] += v
+            if agg == "mean":
+                sums[i_x, i_y] += v
+            else:
+                cell_values[(i_x, i_y)].append(v)
             counts[i_x, i_y] += 1
 
     mask = counts > 0
-    heatmap[mask] = sums[mask] / counts[mask]  # mean per cell
+    if agg == "median":
+        for (i_x, i_y), values in cell_values.items():
+            heatmap[i_x, i_y] = float(np.median(values))
+        heatmap[~mask] = np.nan
+    else:
+        heatmap[mask] = sums[mask] / counts[mask]  # mean per cell
     return heatmap, counts, x_edges, y_edges, xi, yi
 
 
-def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None, target_rect=None):
+def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None, target_rect=None, agg="mean"):
     """Render a heatmap with axes in meters."""
     fig, ax = plt.subplots()
     img = ax.imshow(
@@ -116,11 +143,12 @@ def plot_heatmap(folder, heatmap, counts, x_edges, y_edges, recent_cells=None, t
         cmap=CMAP,
         extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
     )
-    ax.set_title(f"{os.path.basename(folder)} | mean power per cell [uW]")
+    agg_label = "Median" if agg == "median" else "Mean"
+    ax.set_title(f"{os.path.basename(folder)} | {agg_label.lower()} power per cell [uW]")
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     cbar = fig.colorbar(img, ax=ax)
-    cbar.ax.set_ylabel("Mean power per cell [uW]")
+    cbar.ax.set_ylabel(f"{agg_label} power per cell [uW]")
     if recent_cells:
         for idx, (i_x, i_y) in enumerate(recent_cells):
             if 0 <= i_x < len(x_edges) - 1 and 0 <= i_y < len(y_edges) - 1:
@@ -181,6 +209,12 @@ def parse_args():
         action="store_true",
         help="Overlay rectangles for the last 5 visited grid cells.",
     )
+    parser.add_argument(
+        "--agg",
+        choices=["mean", "median"],
+        default="mean",
+        help="Aggregation used for heatmap cells (default: mean).",
+    )
     return parser.parse_args()
 
 
@@ -215,7 +249,11 @@ def main():
         ys = np.array([p.y for p in positions], dtype=float)
         vs = np.array([v.pwr_pw / 1e6 for v in values], dtype=float)  # uW
 
-        heatmap, counts, x_edges, y_edges, xi, yi = compute_heatmap(xs, ys, vs, GRID_RES)
+        report_small_values(folder_path, vs)
+
+        heatmap, counts, x_edges, y_edges, xi, yi = compute_heatmap(
+            xs, ys, vs, GRID_RES, agg=args.agg
+        )
 
         recent_cells = None
         if args.plot_movement:
@@ -230,7 +268,16 @@ def main():
                 if len(recent_cells) == 5:
                     break
             recent_cells.reverse()
-        plot_heatmap(folder_path, heatmap, counts, x_edges, y_edges, recent_cells, target_rect)
+        plot_heatmap(
+            folder_path,
+            heatmap,
+            counts,
+            x_edges,
+            y_edges,
+            recent_cells,
+            target_rect,
+            agg=args.agg,
+        )
         if not args.plot_all:
             break
 

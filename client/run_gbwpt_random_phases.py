@@ -496,7 +496,7 @@ def tx_ref(usrp, tx_streamer, quit_event, phase, amplitude, start_time=None):
     amplitude = np.asarray(amplitude)
     phase = np.asarray(phase)
     # Compute the complex signal for each channel: A * e^(j * phi)
-    sample = amplitude * np.exp(1j * phase)
+    sample = amplitude
 
     # Initialize a large transmit buffer filled with the reference signal
     transmit_buffer = np.ones(
