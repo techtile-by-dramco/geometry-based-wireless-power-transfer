@@ -1,49 +1,46 @@
 <?xml version="1.0"?>
-<scene version="3.0.0">
-    <integrator type="path"/>
+        <scene version="3.0.0">
+            <integrator type="path"/>
 
-    <bsdf type="itu-radio-material" id="wall_mat">
-        <string name="type" value="plywood"/>
-    </bsdf>
+            <bsdf type="itu-radio-material" id="wall_mat">
+                <string name="type" value="plywood"/>
+            </bsdf>
 
-    <!-- Floor: spans x∈[0,Lx], y∈[0,Ly] at z=0 -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <scale x="4.0" y="2.0"/>
-            <translate x="4.0" y="2.0" z="0"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <scale x="4.0" y="2.0"/>
+                    <translate x="4.0" y="2.0" z="0"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
 
-    <!-- Ceiling: spans x∈[0,Lx], y∈[0,Ly] at z=Lz -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="180"/>
-            <scale x="4.0" y="2.0"/>
-            <translate x="4.0" y="2.0" z="2.4"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="180"/>
+                    <scale x="4.0" y="2.0"/>
+                    <translate x="4.0" y="2.0" z="2.4"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
 
-    <!-- Wall y=0: spans x∈[0,Lx], z∈[0,Lz] at y=0 -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="90"/>
-            <scale x="4.0" y="1.2"/>
-            <translate x="4.0" y="0" z="1.2"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="90"/>
+                    <scale x="4.0" y="1.2"/>
+                    <translate x="4.0" y="0" z="1.2"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
 
-    <!-- Wall y=Ly: spans x∈[0,Lx], z∈[0,Lz] at y=Ly -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="-90"/>
-            <scale x="4.0" y="1.2"/>
-            <translate x="4.0" y="4.0" z="1.2"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="-90"/>
+                    <scale x="4.0" y="1.2"/>
+                    <translate x="4.0" y="4.0" z="1.2"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
 
-</scene>
+        </scene>
 
+        

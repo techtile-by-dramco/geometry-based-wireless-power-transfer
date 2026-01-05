@@ -30,6 +30,8 @@ import mitsuba as mi
 
 SPEC_ORDERS = [0,1,2,1,2]
 SDRs = [False, False, False, True, True] 
+active_tiles = ["A05", "A06", "A07", "A08", "A09", "A10", "B05", "B06", "B07", "B08", "B09", "B10", "C05", "C06", "C07", "C08", "C09", "C10", "D05", "D06", "D07", "D08", "D09", "D10", "E05", "E06", "E07", "E08", "E09", "E10", "F05", "F06", "F07", "F08", "F09", "F10", "G05", "G06", "G07", "G08", "G09", "G10"]
+active_tiles_upper = {t.upper() for t in active_tiles}
 
 positions_url = (
     "https://raw.githubusercontent.com/techtile-by-dramco/"
@@ -130,9 +132,11 @@ def configure_mitsuba_variant(cpu_only: bool, gpu_index: int | None) -> str:
     """Select Mitsuba CPU/GPU variant via mi.set_variant before importing Sionna."""
     env_cpu_only = os.environ.get("GBWPT_CPU_ONLY", "0") in {"1", "true", "True", "yes"}
     if cpu_only or env_cpu_only:
-        mi.set_variant("llvm_ad_rgb")
+        mi.set_variant("llvm_ad_mono_polarized")
         os.environ.pop("CUDA_VISIBLE_DEVICES", None)
-        print("Forcing CPU Mitsuba variant 'llvm_ad_rgb' (flag or GBWPT_CPU_ONLY=1).")
+        print(
+            "Forcing CPU Mitsuba variant 'llvm_ad_mono_polarized' (flag or GBWPT_CPU_ONLY=1)."
+        )
         return "llvm_ad_rgb"
 
     chosen_idx = None
@@ -148,12 +152,12 @@ def configure_mitsuba_variant(cpu_only: bool, gpu_index: int | None) -> str:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(chosen_idx)
 
     try:
-        mi.set_variant("cuda_ad_rgb")
+        mi.set_variant("llvm_ad_mono_polarized")
         print("Using GPU Mitsuba variant 'cuda_ad_rgb'.")
         return "cuda_ad_rgb"
     except Exception as exc:
         print(f"Failed to set GPU variant, falling back to CPU Mitsuba variant 'llvm_ad_rgb': {exc}")
-        mi.set_variant("llvm_ad_rgb")
+        mi.set_variant("llvm_ad_mono_polarized")
         os.environ.pop("CUDA_VISIBLE_DEVICES", None)
         return "llvm_ad_rgb"
 
@@ -174,13 +178,21 @@ config = yaml.safe_load(resp.content.decode("utf-8"))
 
 tx_positions = []
 tx_names = []
+selected_entries = []
 
-for entry in config["antennes"]:
+tile_lookup = {entry["tile"].upper(): entry for entry in config["antennes"]}
+
+
+# only extract ceiling
+for tile in active_tiles:
+    entry = tile_lookup.get(tile.upper())
+    if entry is None:
+        raise RuntimeError(f"Tile '{tile}' not found in config['antennes']")
+    selected_entries.append(entry)
     ch1 = entry["channels"][1]  # channel 1
-    tile = entry["tile"]
     pos = np.array([ch1["x"], ch1["y"], ch1["z"]], dtype=np.float32)
     tx_positions.append(pos)
-    tx_names.append(f"{tile}_ch1")
+    tx_names.append(f"{entry['tile']}_ch1")
 
 all_pts = np.stack(tx_positions, axis=0)  # (N,3)
 num_tx = all_pts.shape[0]
@@ -195,63 +207,7 @@ Ly = 4.0
 Lz = 2.4
 print(f"Room size: Lx={Lx:.2f} m, Ly={Ly:.2f} m, Lz={Lz:.2f} m")
 
-# ============================================================
-# WRITE MITSUBA XML (PLYWOOD BOX)
-# ============================================================
 
-room_xml = f"""<?xml version="1.0"?>
-<scene version="3.0.0">
-    <integrator type="path"/>
-
-    <bsdf type="itu-radio-material" id="wall_mat">
-        <string name="type" value="plywood"/>
-    </bsdf>
-
-    <!-- Floor: spans x∈[0,Lx], y∈[0,Ly] at z=0 -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <scale x="{Lx/2}" y="{Ly/2}"/>
-            <translate x="{Lx/2}" y="{Ly/2}" z="0"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
-
-    <!-- Ceiling: spans x∈[0,Lx], y∈[0,Ly] at z=Lz -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="180"/>
-            <scale x="{Lx/2}" y="{Ly/2}"/>
-            <translate x="{Lx/2}" y="{Ly/2}" z="{Lz}"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
-
-    <!-- Wall y=0: spans x∈[0,Lx], z∈[0,Lz] at y=0 -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="90"/>
-            <scale x="{Lx/2}" y="{Lz/2}"/>
-            <translate x="{Lx/2}" y="0" z="{Lz/2}"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
-
-    <!-- Wall y=Ly: spans x∈[0,Lx], z∈[0,Lz] at y=Ly -->
-    <shape type="rectangle">
-        <transform name="to_world">
-            <rotate x="1" angle="-90"/>
-            <scale x="{Lx/2}" y="{Lz/2}"/>
-            <translate x="{Lx/2}" y="{Ly}" z="{Lz/2}"/>
-        </transform>
-        <ref id="wall_mat"/>
-    </shape>
-
-</scene>
-
-"""
-
-xml_path.write_text(room_xml, encoding="utf-8")
-print(f"Wrote room XML to {xml_path}")
 
 solver = rt.PathSolver()
 
@@ -265,7 +221,60 @@ for specular_order, SDR in zip(SPEC_ORDERS, SDRs):
     if specular_order == 0:
         scene = load_scene(None)
     else:
-        scene = load_scene(str(xml_path))
+        # ============================================================
+        # WRITE MITSUBA XML (PLYWOOD BOX)
+        # ============================================================
+
+        room_xml = f"""<?xml version="1.0"?>
+        <scene version="3.0.0">
+            <integrator type="path"/>
+
+            <bsdf type="itu-radio-material" id="wall_mat">
+                <string name="type" value="plywood"/>
+            </bsdf>
+
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <scale x="{Lx/2}" y="{Ly/2}"/>
+                    <translate x="{Lx/2}" y="{Ly/2}" z="0"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
+
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="180"/>
+                    <scale x="{Lx/2}" y="{Ly/2}"/>
+                    <translate x="{Lx/2}" y="{Ly/2}" z="{Lz}"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
+
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="90"/>
+                    <scale x="{Lx/2}" y="{Lz/2}"/>
+                    <translate x="{Lx/2}" y="0" z="{Lz/2}"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
+
+            <shape type="rectangle">
+                <transform name="to_world">
+                    <rotate x="1" angle="-90"/>
+                    <scale x="{Lx/2}" y="{Lz/2}"/>
+                    <translate x="{Lx/2}" y="{Ly}" z="{Lz/2}"/>
+                </transform>
+                <ref id="wall_mat"/>
+            </shape>
+
+        </scene>
+
+        """
+
+        xml_path.write_text(room_xml, encoding="utf-8")
+        print(f"Wrote room XML to {xml_path}")
+        scene = load_scene(str(xml_path), merge_shapes=False)
     #
 
     # ============================================================
@@ -324,7 +333,7 @@ for specular_order, SDR in zip(SPEC_ORDERS, SDRs):
         los=True,
         specular_reflection=SDR,
         diffuse_reflection=SDR,
-        refraction=SDR,
+        refraction=False,
         synthetic_array=False,
         seed=1,
     )
@@ -438,14 +447,13 @@ for specular_order, SDR in zip(SPEC_ORDERS, SDRs):
     out_dict = {}
 
     # IMPORTANT: This assumes the TX ordering in paths.cir() matches the ordering
-    # you added Transmitters / the ordering in config["antennes"] (channel 1).
-    # If you changed insertion order, you must build a mapping.
-    if len(config["antennes"]) != len(w_phase_deg):
+    # you added Transmitters / the ordering in selected_entries (channel 1).
+    if len(selected_entries) != len(w_phase_deg):
         raise RuntimeError(
-            f"Mismatch: config has {len(config['antennes'])} TX entries but CIR has {len(w_phase_deg)} TX."
+            f"Mismatch: selected config has {len(selected_entries)} TX entries but CIR has {len(w_phase_deg)} TX."
         )
 
-    for i, c in enumerate(config["antennes"]):
+    for i, c in enumerate(selected_entries):
         ch1 = c["channels"][1]
         tile_name = c["tile"]
 
