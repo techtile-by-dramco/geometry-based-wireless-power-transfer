@@ -17,7 +17,7 @@ import sys
 # ****************************************************************************************** #
 
 SAVE_EVERY = 60.0  # seconds
-FOLDER = "RANDOM"  # subfolder inside data/ where to save measurement data
+FOLDER = "RANDOM-2"  # subfolder inside data/ where to save measurement data
 TIMESTAMP = round(time())
 
 # -------------------------------------------------
