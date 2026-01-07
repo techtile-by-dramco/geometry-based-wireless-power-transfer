@@ -1,4 +1,4 @@
-# energy-ball-A heatmaps
+# sionna1-C heatmaps
 
 ![heatmap](heatmap.png)
 

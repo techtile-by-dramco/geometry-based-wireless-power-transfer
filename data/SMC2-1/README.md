@@ -1,4 +1,4 @@
-# energy-ball-A heatmaps
+# SMC2-1 heatmaps
 
 ![heatmap](heatmap.png)
 

@@ -1,4 +1,4 @@
-# energy-ball-A heatmaps
+# RANDOM heatmaps
 
 ![heatmap](heatmap.png)
 

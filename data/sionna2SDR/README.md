@@ -1,4 +1,4 @@
-# energy-ball-A heatmaps
+# sionna2SDR heatmaps
 
 ![heatmap](heatmap.png)
 
