@@ -755,13 +755,13 @@ def main():
             global_gain, target_gain = gain_stats(aligned_heatmap, baseline_heatmap, baseline_x_edges, baseline_y_edges, target_rect)
             gain_title = None
             if global_gain:
-                gain_title = f"Δavg {global_gain['avg_db']:.1f}dB / max {global_gain['max_db']:.1f}dB"
+                gain_title = f"avg {global_gain['avg_db']:.1f}dB / max {global_gain['max_db']:.1f}dB"
                 print(
                     f"Gain vs {baseline_folder_name}: avg {global_gain['avg_db']:.2f} dB ({global_gain['avg_lin']:.2f}x), "
                     f"max {global_gain['max_db']:.2f} dB ({global_gain['max_lin']:.2f}x)"
                 )
             if target_gain:
-                target_str = f"target Δavg {target_gain['avg_db']:.1f}dB / max {target_gain['max_db']:.1f}dB"
+                target_str = f"target avg {target_gain['avg_db']:.1f}dB / max {target_gain['max_db']:.1f}dB"
                 gain_title = f"{gain_title} | {target_str}" if gain_title else target_str
                 print(
                     f"Target gain vs {baseline_folder_name}: avg {target_gain['avg_db']:.2f} dB ({target_gain['avg_lin']:.2f}x), "
