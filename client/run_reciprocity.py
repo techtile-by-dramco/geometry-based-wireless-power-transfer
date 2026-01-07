@@ -945,11 +945,16 @@ def main():
         phi_P = result_queue.get()
 
         # Print pilot phase
-    logger.info("Phase pilot reference signal: %s%s (rad)", fmt(phi_P), "")
+        logger.info(
+            "Phase pilot reference signal: %s (rad) / %s%s",
+            fmt(phi_P),
+            fmt(np.rad2deg(phi_P)),
+            DEG,
+        )
 
-    start_next_cmd += (
-        cmd_time + 4.0 + CAPTURE_TIME
-    )  # Schedule next command after delay
+        start_next_cmd += (
+            cmd_time + 4.0 + CAPTURE_TIME
+        )  # Schedule next command after delay
 
         # -------------------------------------------------------------------------
         # STEP 2: Perform internal loopback measurement with reference signal
