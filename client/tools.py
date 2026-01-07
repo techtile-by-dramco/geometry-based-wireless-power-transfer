@@ -75,10 +75,9 @@ def apply_bandpass(x: np.ndarray, fs=250e3):
 
 
 def compute_instantaneous_frequency(x: np.ndarray, fs=250e3):
-    phase = np.angle(x)
     # Approximate instantaneous frequency offset via phase derivative
     dphi = np.unwrap(np.angle(x[1:] * np.conj(x[:-1])))
-    freq_offset = (fs / (2 * np.pi)) * dphi
+    freq_offset = (fs / (2 * np.pi)) * circmean(dphi)
     return freq_offset
 
 def get_phases_and_apply_bandpass(x: np.ndarray, fs=250e3):
