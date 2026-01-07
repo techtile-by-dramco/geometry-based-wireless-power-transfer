@@ -70,14 +70,44 @@ class LogFormatter(logging.Formatter):
         now = datetime.now()
         return "{:%H:%M}:{:05.2f}".format(now, now.second + now.microsecond / 1e6)
 
-    def formatTime(self, record, datefmt=None):
-        """Override the default time formatter to include fractional seconds."""
-        converter = self.converter(record.created)
-        if datefmt:
-            formatted_date = converter.strftime(datefmt)
-        else:
-            formatted_date = LogFormatter.pp_now()
-        return formatted_date
+def formatTime(self, record, datefmt=None):
+    """Override the default time formatter to include fractional seconds."""
+    converter = self.converter(record.created)
+    if datefmt:
+        formatted_date = converter.strftime(datefmt)
+    else:
+        formatted_date = LogFormatter.pp_now()
+    return formatted_date
+
+
+class ColoredFormatter(LogFormatter):
+    """Console formatter with ANSI colors per level."""
+
+    COLORS = {
+        logging.DEBUG: "\033[36m",     # cyan
+        logging.INFO: "\033[32m",      # green
+        logging.WARNING: "\033[33m",   # yellow
+        logging.ERROR: "\033[31m",     # red
+        logging.CRITICAL: "\033[35m",  # magenta
+    }
+    RESET = "\033[0m"
+
+    def format(self, record):
+        color = self.COLORS.get(record.levelno, "")
+        reset = self.RESET if color else ""
+        record.levelname = f"{color}{record.levelname}{reset}"
+        return super().format(record)
+
+
+def fmt(val):
+    """Format float to 0.3f."""
+    try:
+        return f"{float(val):.3f}"
+    except Exception:
+        return str(val)
+
+
+DEG = "\u00b0"
 
 
 # =============================================================================
@@ -107,7 +137,8 @@ logger.addHandler(console)
 formatter = LogFormatter(
     fmt="[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s"
 )
-console.setFormatter(formatter)
+# Colored console output; file uses plain formatter
+console.setFormatter(ColoredFormatter(fmt=formatter._fmt))
 
 
 # Also log to file in the script directory
@@ -202,27 +233,55 @@ def rx_ref(usrp, rx_streamer, quit_event, duration, result_queue, start_time=Non
 
         np.save(file_name_state, iq_samples)
 
-        phase_ch0, freq_slope_ch0 = tools.get_phases_and_apply_bandpass(
-            iq_samples[0, :]
+        phase_ch0, freq_slope_ch0_before, freq_slope_ch0_after = (
+            tools.get_phases_and_apply_bandpass(iq_samples[0, :])
         )
-        phase_ch1, freq_slope_ch1 = tools.get_phases_and_apply_bandpass(
-            iq_samples[1, :]
+        phase_ch1, freq_slope_ch1_before, freq_slope_ch1_after = (
+            tools.get_phases_and_apply_bandpass(iq_samples[1, :])
         )
 
-        logger.debug("Frequency offset CH0: %.4f", freq_slope_ch0 / (2 * np.pi))
-        logger.debug("Frequency offset CH1: %.4f", freq_slope_ch1 / (2 * np.pi))
+        logger.debug(
+            "Frequency offset CH0:     %.2f Hz     %.2f Hz",
+            float(freq_slope_ch0_before),
+            float(freq_slope_ch0_after),
+        )
+        logger.debug(
+            "Frequency offset CH1:     %.2f Hz     %.2f Hz",
+            float(freq_slope_ch1_before),
+            float(freq_slope_ch1_after),
+        )
 
-        logger.debug("Phase offset CH0: %.4f", np.rad2deg(phase_ch0).mean())
-        logger.debug("Phase offset CH1: %.4f", np.rad2deg(phase_ch1).mean())
+        # logger.debug(
+        #     "Phase CH0: mean %s%s min %s%s max %s%s",
+        #     fmt(np.rad2deg(tools.circmean(phase_ch0, deg=False))), DEG,
+        #     fmt(np.rad2deg(phase_ch0).min()), DEG,
+        #     fmt(np.rad2deg(phase_ch0).max()), DEG,
+        # )
+        # logger.debug(
+        #     "Phase CH1: mean %s%s min %s%s max %s%s",
+        #     fmt(np.rad2deg(tools.circmean(phase_ch1, deg=False))), DEG,
+        #     fmt(np.rad2deg(phase_ch1).min()), DEG,
+        #     fmt(np.rad2deg(phase_ch1).max()), DEG,
+        # )
 
         phase_diff = tools.to_min_pi_plus_pi(phase_ch0 - phase_ch1, deg=False)
+
+        logger.debug(
+            "Phase CH1: mean %s%s min %s%s max %s%s",
+            fmt(np.rad2deg(tools.circmean(phase_diff, deg=False))),
+            DEG,
+            fmt(np.rad2deg(phase_diff).min()),
+            DEG,
+            fmt(np.rad2deg(phase_diff).max()),
+            DEG,
+        )
 
         # phase_diff = phase_ch0 - phase_ch1
 
         _circ_mean = tools.circmean(phase_diff, deg=False)
-        _mean = np.mean(phase_diff)
+        # _mean = np.mean(phase_diff)
 
-        logger.debug("Diff cirmean and mean: %.6f", _circ_mean - _mean)
+        # logger.debug("Diff cirmean and mean: %s", fmt(_circ_mean - _mean))
 
         # result_queue.put(_mean)
         result_queue.put(_circ_mean)
@@ -234,17 +293,17 @@ def rx_ref(usrp, rx_streamer, quit_event, duration, result_queue, start_time=Non
         max_Q = np.max(np.abs(np.imag(iq_samples)), axis=1)
 
         logger.debug(
-            "MAX AMPL IQ CH0: I %.6f Q %.6f CH1:I %.6f Q %.6f",
-            max_I[0],
-            max_Q[0],
-            max_I[1],
-            max_Q[1],
+            "MAX AMPL IQ CH0: I %s Q %s CH1: I %s Q %s",
+            fmt(max_I[0]),
+            fmt(max_Q[0]),
+            fmt(max_I[1]),
+            fmt(max_Q[1]),
         )
 
         logger.debug(
-            "AVG AMPL IQ CH0: %.6f CH1: %.6f",
-            avg_ampl[0],
-            avg_ampl[1],
+            "AVG AMPL IQ CH0: %s CH1: %s",
+            fmt(avg_ampl[0]),
+            fmt(avg_ampl[1]),
         )
 
 
@@ -276,13 +335,11 @@ def setup_pps(usrp, pps):
 
 def print_tune_result(tune_res):
     logger.debug(
-        "Tune Result:\n    Target RF  Freq: %.6f (MHz)\n Actual RF  Freq: %.6f (MHz)\n Target DSP Freq: %.6f "
-        "(MHz)\n "
-        "Actual DSP Freq: %.6f (MHz)\n",
-        (tune_res.target_rf_freq / 1e6),
-        (tune_res.actual_rf_freq / 1e6),
-        (tune_res.target_dsp_freq / 1e6),
-        (tune_res.actual_dsp_freq / 1e6),
+        "Tune Result:\n    Target RF  Freq: %s MHz\n    Actual RF  Freq: %s MHz\n    Target DSP Freq: %s MHz\n    Actual DSP Freq: %s MHz",
+        fmt(tune_res.target_rf_freq / 1e6),
+        fmt(tune_res.actual_rf_freq / 1e6),
+        fmt(tune_res.target_dsp_freq / 1e6),
+        fmt(tune_res.actual_dsp_freq / 1e6),
     )
 
 
@@ -1034,8 +1091,12 @@ def main():
         phi_LB = result_queue.get()
 
         # Print loopback phase
-        logger.info("Phase LB reference signal in rad: %s", phi_LB)
-        logger.info("Phase LB reference signal in degrees: %s", np.rad2deg(phi_LB))
+        logger.info(
+            "Phase LB reference signal: %s (rad) / %s%s",
+            fmt(phi_LB),
+            fmt(np.rad2deg(phi_LB)),
+            DEG,
+        )
 
         start_next_cmd += cmd_time + 2.0 + CAPTURE_TIME  # Schedule next command
 
@@ -1084,8 +1145,12 @@ def main():
         alive_socket.close()
 
         phase_corr = phi_LB - np.deg2rad(phi_cable) + np.deg2rad(phi_BF)
-        logger.info("Phase correction in rad: %s", phase_corr)
-        logger.info("Phase correction in degrees: %s", np.rad2deg(phase_corr))
+        logger.info(
+            "Phase correction: %s (rad) / %s%s",
+            fmt(phase_corr),
+            fmt(np.rad2deg(phase_corr)),
+            DEG,
+        )
 
         tx_phase_coh(
             usrp,
