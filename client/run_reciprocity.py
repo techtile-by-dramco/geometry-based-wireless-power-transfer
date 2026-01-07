@@ -233,15 +233,19 @@ def rx_ref(usrp, rx_streamer, quit_event, duration, result_queue, start_time=Non
 
         np.save(file_name_state, iq_samples)
 
-        phase_ch0, freq_slope_ch0 = tools.get_phases_and_apply_bandpass(
+        phase_ch0, freq_slope_ch0_before, freq_slope_ch0_after = tools.get_phases_and_apply_bandpass(
             iq_samples[0, :]
         )
-        phase_ch1, freq_slope_ch1 = tools.get_phases_and_apply_bandpass(
+        phase_ch1, freq_slope_ch1_before, freq_slope_ch1_after = tools.get_phases_and_apply_bandpass(
             iq_samples[1, :]
         )
 
-        logger.debug("Frequency offset CH0: %s", fmt(freq_slope_ch0 / (2 * np.pi)))
-        logger.debug("Frequency offset CH1: %s", fmt(freq_slope_ch1 / (2 * np.pi)))
+        logger.debug(
+            "Frequency offset CH0:     %.2f Hz     %.2f Hz", fmt(freq_slope_ch0_before), fmt(freq_slope_ch0_after)
+        )
+        logger.debug(
+            "Frequency offset CH1:     %.2f Hz     %.2f Hz", fmt(freq_slope_ch1_before), fmt(freq_slope_ch1_after)
+        )
 
         # logger.debug(
         #     "Phase CH0: mean %s%s min %s%s max %s%s",
@@ -359,7 +363,9 @@ def tune_usrp(usrp, freq, channels, at_time):
     rreq.dsp_freq_policy = uhd.types.TuneRequestPolicy(ord("M"))
     rreq.args = uhd.types.DeviceAddr("mode_n=fractional")
     for chan in channels:
+        logger.debug("RX tuning...")
         print_tune_result(usrp.set_rx_freq(rreq, chan))
+        logger.debug("TX tuning...")
         print_tune_result(usrp.set_tx_freq(treq, chan))
     while not usrp.get_rx_sensor("lo_locked").to_bool():
         print(".")
