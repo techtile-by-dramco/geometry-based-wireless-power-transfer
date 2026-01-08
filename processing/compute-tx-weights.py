@@ -28,8 +28,6 @@ antennas = dict()
 # UE position (energy neutral device)
 target_location = np.array([3.27905810546875, 1.7493585205078126, 0.2528133087158203])
 
-
-
 # Constants
 f = 920e6  # Antenna frequency (Hz)
 lambda_ = v_c / f  # Wavelength (m)
@@ -39,7 +37,7 @@ out_dict = dict()
 
 for c in config["antennes"]:
     # only one antenna is used
-    ch1 = c["channels"][1]
+    ch1 = c["channels"][0]
     tile_name = c["tile"]
     out_dict[tile_name] = []
     out_full_dict[tile_name] = []
