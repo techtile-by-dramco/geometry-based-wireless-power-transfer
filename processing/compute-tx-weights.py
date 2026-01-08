@@ -7,8 +7,8 @@ from scipy.constants import c as v_c
 
 #################### CONFIGURATIONS ####################
 output_path_benchmark = "../client/tx-weights-benchmark.yml"
-output_full_path_friis = "../client/tx-weights-friis-offset.yml"
-output_path_friis = "../client/tx-phases-friis-offset.yml"
+output_full_path_friis = "../client/tx-weights-friis.yml"
+output_path_friis = "../client/tx-phases-friis.yml"
 AMPLTIUDE = 0.8
 ########################################################
 
@@ -26,8 +26,8 @@ antennas = dict()
 
 
 # UE position (energy neutral device)
-# target_location = np.array([3.27905810546875, 1.7493585205078126, 0.2528133087158203])
-target_location = np.array([3.52068721094, 1.7493585205078126, 0.2528133087158203]) # offset to center of LoS
+target_location = np.array([3.27905810546875, 1.7493585205078126, 0.2528133087158203])
+
 
 
 # Constants
