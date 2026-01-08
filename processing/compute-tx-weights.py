@@ -26,7 +26,7 @@ antennas = dict()
 
 
 # UE position (energy neutral device)
-target_location = np.array([3.181, 1.774, 0.266])
+target_location = np.array([3.27905810546875, 1.7493585205078126, 0.2528133087158203])
 
 # Constants
 f = 920e6  # Antenna frequency (Hz)
