@@ -1,0 +1,12 @@
+folder: BALL-MAX-20260108121340
+aggregation: mean
+grid_res_m: 0.03260869565217391
+target_location: 3.279058, 1.749359, 0.2528133087158203
+max_power_uW: 11.063471
+max_cell_center_m: 3.276540, 2.136697
+max_cell_index: 38, 62
+max_cell_count: 0
+target_cell_index: 38, 38
+target_cell_center_m: 3.276540, 1.745392
+target_power_uW: 0.279193
+target_cell_count: 11

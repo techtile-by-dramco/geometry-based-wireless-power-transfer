@@ -368,6 +368,13 @@ def plot_heatmap(
     else:
         plt.close(fig)
 
+    if save_bitmap:
+        fig2, ax2 = plt.subplots()
+        _draw(ax2, add_axes=False)
+        fig2.tight_layout(pad=0)
+        plt.savefig(os.path.join(folder, bitmap_name), bbox_inches="tight", pad_inches=0)
+        plt.close(fig2)
+
     # dBm plot (vmin fixed to -30 dBm)
     heatmap_dbm = 10 * np.log10(np.clip(heatmap * 1e-6, 1e-15, None) / 1e-3)  # uW->W then to dBm
     fig_dbm, ax_dbm = plt.subplots()
@@ -402,12 +409,57 @@ def plot_heatmap(
     else:
         plt.close(fig_dbm)
 
-    if save_bitmap:
-        fig2, ax2 = plt.subplots()
-        _draw(ax2, add_axes=False)
-        fig2.tight_layout(pad=0)
-        plt.savefig(os.path.join(folder, bitmap_name), bbox_inches="tight", pad_inches=0)
-        plt.close(fig2)
+
+def _cell_center(i_x, i_y, x_edges, y_edges):
+    """Return center coordinate for a heatmap cell index."""
+    cx = (x_edges[i_x] + x_edges[i_x + 1]) / 2.0
+    cy = (y_edges[i_y] + y_edges[i_y + 1]) / 2.0
+    return cx, cy
+
+
+def write_folder_log(folder, heatmap, counts, x_edges, y_edges, target_xyz, agg):
+    """Write a per-folder log with summary stats."""
+    log_path = os.path.join(folder, "heatmap-log.txt")
+    if np.isfinite(heatmap).any():
+        max_idx = np.nanargmax(heatmap)
+        i_x, i_y = np.unravel_index(max_idx, heatmap.shape)
+        max_val = float(heatmap[i_x, i_y])
+        max_x, max_y = _cell_center(i_x, i_y, x_edges, y_edges)
+        max_count = int(counts[i_x, i_y])
+    else:
+        i_x = i_y = None
+        max_val = float("nan")
+        max_x = max_y = float("nan")
+        max_count = 0
+
+    with open(log_path, "w", encoding="utf-8") as fh:
+        fh.write(f"folder: {os.path.basename(folder)}\n")
+        fh.write(f"aggregation: {agg}\n")
+        fh.write(f"grid_res_m: {GRID_RES}\n")
+        if target_xyz and len(target_xyz) >= 2:
+            z_val = target_xyz[2] if len(target_xyz) > 2 else "n/a"
+            fh.write(f"target_location: {target_xyz[0]:.6f}, {target_xyz[1]:.6f}, {z_val}\n")
+        else:
+            fh.write("target_location: n/a\n")
+        fh.write(f"max_power_uW: {max_val:.6f}\n")
+        fh.write(f"max_cell_center_m: {max_x:.6f}, {max_y:.6f}\n")
+        if i_x is not None and i_y is not None:
+            fh.write(f"max_cell_index: {i_x}, {i_y}\n")
+            fh.write(f"max_cell_count: {max_count}\n")
+        if target_xyz and len(target_xyz) >= 2:
+            tx, ty = target_xyz[0], target_xyz[1]
+            ti_x = np.digitize(tx, x_edges) - 1
+            ti_y = np.digitize(ty, y_edges) - 1
+            if 0 <= ti_x < heatmap.shape[0] and 0 <= ti_y < heatmap.shape[1]:
+                tgt_power = heatmap[ti_x, ti_y]
+                tgt_count = int(counts[ti_x, ti_y])
+                fh.write(f"target_cell_index: {ti_x}, {ti_y}\n")
+                fh.write(f"target_cell_center_m: {_cell_center(ti_x, ti_y, x_edges, y_edges)[0]:.6f}, {_cell_center(ti_x, ti_y, x_edges, y_edges)[1]:.6f}\n")
+                fh.write(f"target_power_uW: {float(tgt_power):.6f}\n")
+                fh.write(f"target_cell_count: {tgt_count}\n")
+            else:
+                fh.write("target_power_uW: n/a\n")
+
 
 
 def plot_diff_heatmap(
@@ -808,6 +860,7 @@ def main():
                 if len(recent_cells) == 5:
                     break
             recent_cells.reverse()
+        write_folder_log(folder_path, heatmap, counts, x_edges, y_edges, target_vals, args.agg)
         plot_heatmap(
             folder_path,
             heatmap,
