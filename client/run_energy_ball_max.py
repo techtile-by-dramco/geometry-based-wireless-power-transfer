@@ -978,14 +978,15 @@ def get_next_phase(
     current_phase: float,
     stronger: bool,
     prev_delta: float,
-    delta_phi: float = np.pi / 50,
+    delta_phi: float = np.pi / 5,
 ) -> tuple[float, float]:
     """Compute next phase based on energyball algorithm.
 
     Existing random walk with memory if stronger.
     """
     u = prev_delta if stronger else 0.0
-    applied_delta = np.random.choice([-delta_phi, delta_phi])
+    kappa = 1.0 / (delta_phi ** 2)
+    applied_delta = np.random.vonmises(mu=0.0, kappa=kappa)
     next_phase = float(current_phase + u + applied_delta)
     return next_phase, applied_delta
 
@@ -1161,7 +1162,8 @@ def main():
             applied_phase, applied_delta = get_next_phase(
                 current_phase=prev_phase,
                 stronger=stronger,
-                prev_delta=prev_delta
+                prev_delta=prev_delta,
+                delta_phi=np.pi / 4,
             )
 
             start_now_cmd = start_next_cmd

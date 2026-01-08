@@ -174,7 +174,7 @@ rfep = RFEP(settings["ep"]["ip"], settings["ep"]["port"])
 
 logger.info("Initial RFEP data: %s", rfep.get_data())
 
-CAPTURE_POWER_TIME = 3.0
+CAPTURE_POWER_TIME = 3  # s
 prev_power = 0
 stop_requested = False
 
@@ -269,7 +269,7 @@ def collect_power(next_tx_in: float) -> float:
     time.sleep(next_tx_in) # no need for margin as we take the max power anyhow.
 
     start_time = time.time()
-    logger.info("Collecting power measurements for %s seconds...", CAPTURE_POWER_TIME/100.0)
+    logger.info("Collecting power measurements for %s seconds...", CAPTURE_POWER_TIME)
     try:
         while CAPTURE_POWER_TIME > time.time() - start_time and not stop_requested:
             d = rfep.get_data()
