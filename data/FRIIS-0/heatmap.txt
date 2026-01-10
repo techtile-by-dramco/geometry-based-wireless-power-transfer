@@ -1,7 +1,7 @@
 folder: FRIIS-0
 aggregation: mean
 grid_res_m: 0.03260869565217391
-target_location: 3.255969, 1.776655, 0.2528133087158203
+target_location: 3.328091, 1.728644, 0.2528133087158203
 max_power_uW: 48.753567
 max_cell_center_m: 3.322317, 1.737871
 max_cell_index: 50, 47
@@ -14,7 +14,7 @@ cells_total: 9216
 cells_nonzero: 9056
 min_cell_count: 1
 max_cell_count_all: 177
-target_cell_index: 45, 50
-target_cell_center_m: 3.257100, 1.777001
-target_power_uW: 26.495917
-target_cell_count: 13
+target_cell_index: 50, 46
+target_cell_center_m: 3.322317, 1.724827
+target_power_uW: 48.323786
+target_cell_count: 18

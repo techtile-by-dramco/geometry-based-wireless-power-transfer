@@ -3,18 +3,18 @@
   \begin{axis}[
     axis equal image,
     xmin=2.66345, xmax=3.90258,
-    ymin=1.1335, ymax=2.37263,
+    ymin=1.13348, ymax=2.37261,
     axis lines=box,
     xlabel={x [m]},
     ylabel={y [m]},
     colorbar,
     colormap name=inferno,
     point meta min=1e-06,
-    point meta max=34.9732,
+    point meta max=34.0075,
     enlargelimits=false,
     title={RECI-ABS-REFL-0 | mean power [uW]}
   ]
-    \addplot graphics [includegraphics cmd=\pgfimage, xmin=2.66345, xmax=3.90258, ymin=1.1335, ymax=2.37263] {figures/RECI-ABS-REFL-0/heatmap_bitmap.png};
+    \addplot graphics [includegraphics cmd=\pgfimage, xmin=2.66345, xmax=3.90258, ymin=1.13348, ymax=2.37261] {figures/RECI-ABS-REFL-0/heatmap_bitmap.png};
     % Target circle (radius = wavelength/2)
     \draw[red,dashed,thick] (3.28118,1.75131) circle [radius=0.163043];
   \end{axis}
