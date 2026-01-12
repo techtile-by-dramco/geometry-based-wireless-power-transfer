@@ -18,10 +18,10 @@ FREE_TX_GAIN: !!float 80
 
 PILOT_TX_GAIN: !!float 85 
 
-LOOPBACK_RX_GAIN: !!float 46  
+LOOPBACK_RX_GAIN: !!float 44  
 # Receive gain for loopback tests, empirically determined.
 
-REF_RX_GAIN: !!float 46   
+REF_RX_GAIN: !!float 44   
 # Reference receiver gain, empirically determined.
 
 FREQ: !!float 920e6  
