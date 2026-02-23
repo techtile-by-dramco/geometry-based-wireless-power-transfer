@@ -11,6 +11,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 try:
     from scipy.ndimage import distance_transform_edt
     HAS_DT = True
@@ -477,6 +478,68 @@ def plot_heatmap(
         plt.close(fig_dbm)
 
 
+def plot_heatmap_3d(
+    folder,
+    heatmap,
+    x_edges,
+    y_edges,
+    agg="mean",
+    show=True,
+    png_name="heatmap_3d.png",
+    z_label="Power per cell [uW]",
+    title=None,
+    save_pdf=True,
+):
+    """Render a 3D surface plot of the heatmap and save to disk."""
+    finite_vals = heatmap[np.isfinite(heatmap)]
+    if finite_vals.size == 0:
+        print(f"{os.path.basename(folder)}: no finite values for 3D plot; skipping.")
+        return
+
+    x_centers = (x_edges[:-1] + x_edges[1:]) / 2
+    y_centers = (y_edges[:-1] + y_edges[1:]) / 2
+    grid_x, grid_y = np.meshgrid(x_centers, y_centers, indexing="ij")
+    grid_z = np.ma.array(heatmap, mask=~np.isfinite(heatmap))
+
+    agg_label = "Median" if agg == "median" else "Mean"
+    plot_title = title or f"{os.path.basename(folder)} | {agg_label.lower()} power per cell (3D)"
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    # Transparent background for easy compositing
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
+    surf = ax.plot_surface(
+        grid_x,
+        grid_y,
+        grid_z,
+        cmap=CMAP,
+        linewidth=0,
+        antialiased=True,
+        rstride=1,
+        cstride=1,
+    )
+    ax.set_xlabel("x [m]")
+    ax.set_ylabel("y [m]")
+    ax.set_zlabel(z_label)
+    ax.set_title(plot_title)
+    ax.grid(False)
+    ax.view_init(elev=30, azim=225)
+    colorbar = fig.colorbar(surf, ax=ax, shrink=0.6, pad=0.1, aspect=20)
+    colorbar.ax.set_facecolor("none")
+    fig.tight_layout()
+    png_path = os.path.join(folder, png_name)
+    plt.savefig(png_path, transparent=True)
+    if save_pdf:
+        base, _ = os.path.splitext(png_name)
+        pdf_path = os.path.join(folder, f"{base}.pdf")
+        plt.savefig(pdf_path, transparent=True)
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
 def _cell_center(i_x, i_y, x_edges, y_edges):
     """Return center coordinate for a heatmap cell index."""
     cx = (x_edges[i_x] + x_edges[i_x + 1]) / 2.0
@@ -781,6 +844,12 @@ def parse_args():
         help="Export heatmap grids and edges to CSV (for LaTeX/pgfplots).",
     )
     parser.add_argument(
+        "--no-3d",
+        dest="export_3d",
+        action="store_false",
+        help="Disable exporting 3D surface plots.",
+    )
+    parser.add_argument(
         "--fill-empty",
         action="store_true",
         help="Interpolate/fill empty cells with nearest non-empty value.",
@@ -790,6 +859,7 @@ def parse_args():
         type=float,
         help="Grid resolution as a fraction of wavelength (e.g., 0.08 for 0.08*lambda). Overrides default.",
     )
+    parser.set_defaults(export_3d=True)
     return parser.parse_args()
 
 
@@ -814,6 +884,7 @@ def print_run_summary(args, target_rect, baseline_folder_name, baseline_agg, gri
         f"- target rectangle: {rect_desc}\n"
         f"- baseline folder: {baseline_desc} (agg={baseline_agg})\n"
         f"- fill_empty: {args.fill_empty}\n"
+        f"- export_3d: {args.export_3d}\n"
         f"- grid_res: {grid_res:.4f} m\n"
     )
 
@@ -1114,6 +1185,30 @@ def main():
             png_name="heatmap.png",
             bitmap_name="heatmap_bitmap.png",
         )
+        if args.export_3d:
+            plot_heatmap_3d(
+                folder_path,
+                heatmap,
+                x_edges,
+                y_edges,
+                agg=args.agg,
+                show=not args.save_only,
+                png_name="heatmap_3d.png",
+                z_label="Power per cell [uW]",
+                title=f"{os.path.basename(folder_path)} | {args.agg} power per cell [uW] (3D)",
+            )
+            heatmap_dbm = 10 * np.log10(np.clip(heatmap * 1e-6, 1e-15, None) / 1e-3)
+            plot_heatmap_3d(
+                folder_path,
+                heatmap_dbm,
+                x_edges,
+                y_edges,
+                agg=args.agg,
+                show=not args.save_only,
+                png_name="heatmap_3d_dBm.png",
+                z_label="Power per cell [dBm]",
+                title=f"{os.path.basename(folder_path)} | {args.agg} power per cell [dBm] (3D)",
+            )
         if not args.plot_all:
             break
 

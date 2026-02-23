@@ -2,24 +2,24 @@ folder: RECI-3
 aggregation: mean
 grid_res_m: 0.03260869565217391
 target_location: 3.255959, 1.776577, 0.2528133087158203
-max_power_uW: 60.810789
-max_cell_center_m: 3.247431, 1.764081
-max_cell_index: 22, 49
-max_cell_count: 5004
-first_cell_index: 23, 50
+max_power_uW: 58.388158
+max_cell_center_m: 3.264042, 1.786974
+max_cell_index: 9, 20
+max_cell_count: 534
+first_cell_index: 9, 20
 first_position: 3.255959, 1.776577
 baseline_folder_used: RANDOM-1
-total_samples: 25887
-sum_counts: 25887
-cells_total: 5476
-cells_nonzero: 1601
+total_samples: 2629
+sum_counts: 2629
+cells_total: 900
+cells_nonzero: 269
 min_cell_count: 1
-max_cell_count_all: 5004
-target_cell_index: 23, 50
-target_cell_center_m: 3.260475, 1.777125
-target_power_uW: 58.789747
-target_cell_count: 5004
+max_cell_count_all: 534
+target_cell_index: 9, 20
+target_cell_center_m: 3.264042, 1.786974
+target_power_uW: 58.388158
+target_cell_count: 534
 baseline_folder: RANDOM-1
 baseline_target_power_uW: 0.687338
-target_gain_linear: 85.532516
-target_gain_db: 19.32
+target_gain_linear: 84.948248
+target_gain_db: 19.29

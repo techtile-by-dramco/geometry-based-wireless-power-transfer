@@ -1,0 +1,25 @@
+folder: RECI-RF-1
+aggregation: mean
+grid_res_m: 0.03260869565217391
+target_location: 3.293328, 1.759332, 0.2528133087158203
+max_power_uW: 58.275323
+max_cell_center_m: 3.302216, 1.747459
+max_cell_index: 19, 18
+max_cell_count: 60
+first_cell_index: 19, 18
+first_position: 3.293328, 1.759332
+baseline_folder_used: RANDOM-1
+total_samples: 2965
+sum_counts: 2965
+cells_total: 1482
+cells_nonzero: 1271
+min_cell_count: 1
+max_cell_count_all: 60
+target_cell_index: 19, 18
+target_cell_center_m: 3.302216, 1.747459
+target_power_uW: 58.275323
+target_cell_count: 18
+baseline_folder: RANDOM-1
+baseline_target_power_uW: 0.738493
+target_gain_linear: 78.911164
+target_gain_db: 18.97

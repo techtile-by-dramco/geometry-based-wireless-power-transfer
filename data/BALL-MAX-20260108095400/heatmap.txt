@@ -1,25 +1,25 @@
 folder: BALL-MAX-20260108095400
 aggregation: mean
 grid_res_m: 0.03260869565217391
-target_location: 3.328091, 1.728644, 0.2528133087158203
-max_power_uW: 20.097530
-max_cell_center_m: 2.933607, 1.858702
-max_cell_index: 31, 57
-max_cell_count: 1915
-first_cell_index: 60, 47
+target_location: 3.255969, 1.776655, 0.2528133087158203
+max_power_uW: 20.568864
+max_cell_center_m: 2.926323, 1.886754
+max_cell_index: 10, 23
+max_cell_count: 206
+first_cell_index: 22, 18
 first_position: 3.311553, 1.726128
 baseline_folder_used: RANDOM-1
-total_samples: 34312
-sum_counts: 34312
-cells_total: 10379
-cells_nonzero: 6999
+total_samples: 3278
+sum_counts: 3278
+cells_total: 1599
+cells_nonzero: 1177
 min_cell_count: 1
-max_cell_count_all: 1915
-target_cell_index: 61, 47
-target_cell_center_m: 3.324911, 1.728267
-target_power_uW: 4.378151
-target_cell_count: 8
+max_cell_count_all: 206
+target_cell_index: 20, 20
+target_cell_center_m: 3.252410, 1.788928
+target_power_uW: 3.704729
+target_cell_count: 3
 baseline_folder: RANDOM-1
-baseline_target_power_uW: 0.644734
-target_gain_linear: 6.790633
-target_gain_db: 8.32
+baseline_target_power_uW: 0.687338
+target_gain_linear: 5.389967
+target_gain_db: 7.32

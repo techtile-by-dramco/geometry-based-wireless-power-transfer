@@ -1,25 +1,25 @@
 folder: FRIIS-0
 aggregation: mean
 grid_res_m: 0.03260869565217391
-target_location: 3.328091, 1.728644, 0.2528133087158203
-max_power_uW: 48.753567
-max_cell_center_m: 3.322317, 1.737871
-max_cell_index: 50, 47
-max_cell_count: 177
-first_cell_index: 69, 25
+target_location: 3.255969, 1.776655, 0.2528133087158203
+max_power_uW: 47.759799
+max_cell_center_m: 3.332155, 1.754225
+max_cell_index: 20, 19
+max_cell_count: 25
+first_cell_index: 27, 10
 first_position: 3.575163, 1.457385
 baseline_folder_used: RANDOM-1
-total_samples: 76588
-sum_counts: 76588
-cells_total: 9216
-cells_nonzero: 9056
+total_samples: 8141
+sum_counts: 8141
+cells_total: 1521
+cells_nonzero: 1504
 min_cell_count: 1
-max_cell_count_all: 177
-target_cell_index: 50, 46
-target_cell_center_m: 3.322317, 1.724827
-target_power_uW: 48.323786
-target_cell_count: 18
+max_cell_count_all: 25
+target_cell_index: 18, 20
+target_cell_center_m: 3.266938, 1.786834
+target_power_uW: 25.057687
+target_cell_count: 4
 baseline_folder: RANDOM-1
-baseline_target_power_uW: 0.644734
-target_gain_linear: 74.951521
-target_gain_db: 18.75
+baseline_target_power_uW: 0.687338
+target_gain_linear: 36.456135
+target_gain_db: 15.62
