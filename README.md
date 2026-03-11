@@ -25,9 +25,8 @@ YEAR=2026
 ### Software
 ```
 @software{Call2607:Experimental:GitHub,
-  author       = {Gilles Callebaut and
-                  Geoffrey Ottoy and
-                  Jarne Van Mulders},
+  author       = {Callebaut, Gilles and
+                  Van Mulders, Jarne},
   title        = {techtile-by-dramco/geometry-based-wireless-power-
                    transfer: v1.0.0
                   },
