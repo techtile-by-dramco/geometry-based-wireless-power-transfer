@@ -4,6 +4,21 @@ Python tooling to coordinate a geometry-aware wireless power transfer experiment
 
 ---
 
+## Cite us
+```latex
+@INPROCEEDINGS{Call2607:Experimental,
+AUTHOR="Gilles Callebaut and Jarne {Van Mulders}",
+TITLE="Experimental Evaluation of Geometry and {Reciprocity-Based} Beamforming
+with Large Arrays for {RF} Wireless Power Transfer",
+BOOKTITLE="IEEE Wireless Power Technologies Conference and Expo 2026 (WPTCE 2026)",
+ADDRESS="Halifax, Canada",
+PAGES=5,
+DAYS=6,
+MONTH=jul,
+YEAR=2026
+}
+```
+
 ## ✨ At a glance
 - **Control plane:** ZMQ sync + Ansible orchestration
 - **Clients:** Raspberry Pi tiles running USRP B210 scripts
