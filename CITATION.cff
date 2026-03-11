@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software or dataset, please cite it as below."
+title: "geometry-based-wireless-power-transfer"
+version: 1.0.0
+date-released: 2026-03-11
+doi: 10.5281/zenodo.1234
+url: "https://github.com/techtile-by-dramco/geometry-based-wireless-power-transfer"
+
+authors:
+  - family-names: "Callebaut"
+    given-names: "Gilles"
+  - family-names: "Van Mulders"
+    given-names: "Jarne"
+
+preferred-citation:
+  type: conference-paper
+  title: "Experimental Evaluation of Geometry and Reciprocity-Based Beamforming with Large Arrays for RF Wireless Power Transfer"
+  authors:
+    - family-names: "Callebaut"
+      given-names: "Gilles"
+    - family-names: "Van Mulders"
+      given-names: "Jarne"
+  conference:
+    name: "IEEE Wireless Power Technologies Conference and Expo (WPTCE 2026)"
+    location: "Halifax, Canada"
+  year: 2026
+  month: 7
+  start: 2026-07-06
+  publisher: "IEEE"
