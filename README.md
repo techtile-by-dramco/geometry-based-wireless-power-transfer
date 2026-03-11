@@ -5,6 +5,9 @@ Python tooling to coordinate a geometry-aware wireless power transfer experiment
 ---
 
 ## Cite us
+
+### Academic Article
+
 ```latex
 @INPROCEEDINGS{Call2607:Experimental,
 AUTHOR="Gilles Callebaut and Jarne {Van Mulders}",
@@ -16,6 +19,24 @@ PAGES=5,
 DAYS=6,
 MONTH=jul,
 YEAR=2026
+}
+```
+
+### Software
+```
+@software{Call2607:Experimental:GitHub,
+  author       = {Gilles Callebaut and
+                  Geoffrey Ottoy and
+                  Jarne Van Mulders},
+  title        = {techtile-by-dramco/geometry-based-wireless-power-
+                   transfer: v1.0.0
+                  },
+  month        = mar,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.18952022},
+  url          = {https://doi.org/10.5281/zenodo.18952022},
 }
 ```
 
